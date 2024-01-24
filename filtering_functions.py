@@ -65,14 +65,14 @@ def filtering(x, s_freq, lp=0.5, hp=200, lower_val=0.006, higher_val=0.013, art=
     return rej
 
 
-def time_to_samples(time_str, sampling_freq):
+def time_to_samples(time_str, s_freq):
     """
     The total number of seconds is multiplied by the sampling frequency to convert
     the time duration from seconds to samples. This step ensures that the time duration
     is expressed in the context of the discrete samples taken at the specified sampling rate.
 
-    :param time_str:
-    :param sampling_freq:
+    :param time_str: time as string (sep = '-')
+    :param s_freq: sampling frequency
     :return:
     """
     # split the time string and convert to int
@@ -81,4 +81,4 @@ def time_to_samples(time_str, sampling_freq):
     # calculate the total number of seconds
     total_seconds = time_parts[0] * 3600 + time_parts[1] * 60 + time_parts[2]
 
-    return total_seconds * int(sampling_freq)
+    return total_seconds * int(s_freq)
