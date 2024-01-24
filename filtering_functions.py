@@ -27,7 +27,7 @@ def interpolate_nan(padata, pkind='linear'):
 
 # Define general functions
 # noinspection PyTupleAssignmentBalance
-def filtering(x, sfreq, lp=0.5, hp=200, lower_val=0.006, higher_val=0.013, art=3):
+def filtering(x, s_freq, lp=0.5, hp=200, lower_val=0.006, higher_val=0.013, art=3):
     """
     Filters the EEG signal.
 
@@ -40,7 +40,7 @@ def filtering(x, sfreq, lp=0.5, hp=200, lower_val=0.006, higher_val=0.013, art=3
 
     Returns filtered EEG signal
     :param x: unfiltered data
-    :param sfreq: sampling frequency
+    :param s_freq: sampling frequency
     :param lp: lower limit of desired band / filter (to be normalized)
     :param hp: upper limit of desired bad / filter (to be normalized)
     :param lower_val: lower value used for removal of artifacts caused by package loss
@@ -55,7 +55,7 @@ def filtering(x, sfreq, lp=0.5, hp=200, lower_val=0.006, higher_val=0.013, art=3
     rej = interpolate_nan(rej, pkind='linear')
 
     # filter by applying a 5th Order Bandpass Butterworth Filter
-    b, a = signal.butter(N=5, Wn=[lp / (sfreq / 2), hp / (sfreq / 2)], btype='bandpass')
+    b, a = signal.butter(N=5, Wn=[lp / (s_freq / 2), hp / (s_freq / 2)], btype='bandpass')
     rej = signal.filtfilt(b, a, rej)
 
     # if art is provided as argument (int), perform artifact rejection based on art * std
@@ -75,14 +75,10 @@ def time_to_samples(time_str, sampling_freq):
     :param sampling_freq:
     :return:
     """
-
-    # split the time string into its components
-    hour, minute, second = time_str.split('-')
-
-    # convert the components to integers
-    hour, minute, second = int(hour), int(minute), int(second)
+    # split the time string and convert to int
+    time_parts = [int(x) for x in time_str.split('-')]
 
     # calculate the total number of seconds
-    total_seconds = hour * 3600 + minute * 60 + second
+    total_seconds = time_parts[0] * 3600 + time_parts[1] * 60 + time_parts[2]
 
     return total_seconds * int(sampling_freq)

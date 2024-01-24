@@ -1,7 +1,6 @@
 """
 Filter EEG data and create NWB files
 """
-import os
 import re
 import mne
 import sys
@@ -16,8 +15,8 @@ from pynwb.ecephys import ElectricalSeries, LFP
 from ndx_events import TTLs
 from hdmf.backends.hdf5.h5_utils import H5DataIO
 
-from helper_functions import str_sync_to_array, get_all_edf_files
-from filtering_functions import interpolate_nan, time_to_samples, filtering
+from helper_functions import get_all_edf_files
+from filtering_functions import filtering
 
 
 def create_nwb_file(settings, ses_descr, start_t, id, ses_id, arena):
