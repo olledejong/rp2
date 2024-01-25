@@ -1,6 +1,7 @@
 """
 Filter EEG data and create NWB files
 """
+import os
 import re
 import mne
 import sys
@@ -11,7 +12,7 @@ from datetime import datetime
 from dateutil import tz
 from pynwb import NWBFile, NWBHDF5IO
 from pynwb.file import Subject
-from pynwb.ecephys import ElectricalSeries, LFP
+from pynwb.ecephys import ElectricalSeries
 from ndx_events import TTLs
 from hdmf.backends.hdf5.h5_utils import H5DataIO
 
@@ -121,7 +122,8 @@ def add_eeg_data(nwb, file, settings):
 
     all_table_region = nwb.create_electrode_table_region(
         region=list(range(len(electrode_info.keys()))),  # reference row indices 0 to N-1
-        description='all electrodes')
+        description='all electrodes'
+    )
     raw_elec_series = ElectricalSeries(
         name='raw_EEG',
         data=H5DataIO(data=data.T, compression=True),
@@ -135,19 +137,15 @@ def add_eeg_data(nwb, file, settings):
 
 
 def add_filtered_eeg(nwb, settings, raw, sfreq, all_table_region):
-    print('Adding EEG raw annotations...')
-    print('Filtering EEG')
+    print('Filtering EEG..')
 
     electrode_info = settings['electrode_info']
-    lcut = settings['lcut']
-    hcut = settings['hcut']
+    lcut, hcut = settings['lcut'], settings['hcut']
+    low_val, high_val = settings['low_val'], settings['high_val']
     art = settings['art']
-    low_val = settings['low_val']
-    high_val = settings['high_val']
 
     filt = []
     for channel in electrode_info.keys():
-        print(f'Filtering channel {channel}')
         filt.append(filtering(raw[channel][0][0], sfreq, lcut, hcut, low_val, high_val, art))
     filt = np.array(filt)
 
@@ -200,8 +198,14 @@ def main():
     edf_files = get_all_edf_files(edf_folder)
 
     # for each file, generate a NWB file through multiple (processing) steps
+    i, tasks = 0, len(edf_files)
     for file in edf_files:
+        print(f"Working on {file.split('/')[-1]}")
         info, identifier, nwb = load_metadata(file, metadata_file, settings)
+        if os.path.isfile(f'{nwb_output_folder}/{identifier}.nwb') or "TAINI_100E_80108_3.9" in file:
+            print(f"File {identifier} already exits, continuing..")
+            tasks -= 1
+            continue  # skip creating nwb if already exists
         nwb = add_subject_info(nwb, info)  # add subject information
         nwb = add_electrode_info(nwb, info, settings)  # add electrode info
         nwb, raw, sfreq, all_table_region = add_eeg_data(nwb, file, settings)  # add raw eeg data
@@ -211,9 +215,15 @@ def main():
         print('Saving file...')
         with NWBHDF5IO(f'{nwb_output_folder}/{identifier}.nwb', 'w') as io:
             io.write(nwb)
-        sys.exit(0)
+        i += 1
+        print(f"{round(i / tasks * 100)}% done")
+
+        # clean up
+        raw.close()
+        io.close()
 
 
 # Starting point. Process begins here.
 if __name__ == "__main__":
     main()
+    sys.exit(0)
