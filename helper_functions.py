@@ -1,11 +1,8 @@
 """
 File that contains helper functions
 """
-import re
 import os
 import glob
-import numpy as np
-import pandas as pd
 
 
 def get_all_edf_files(root_dir):
