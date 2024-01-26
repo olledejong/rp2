@@ -121,10 +121,6 @@ if __name__ == '__main__':
                 if animal_id in file and file.endswith(".xlsx"):
                     xy_data = get_coordinate_data(os.path.join(coordinates_folder, file))
 
-            try:
-                print(nwb.coordinate_data)
-            except AttributeError:
-                print("nwb_coordinate_data")
             # make new behavioral module
             behavior_module = nwb.create_processing_module(
                 name="coordinate_data", description="Raw coordinate/motion/head orientation data"
