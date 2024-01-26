@@ -94,8 +94,11 @@ if __name__ == '__main__':
     coordinates_folder = settings['coordinate_data_folder']
 
     # loop over all created NWB files
-    for nwb_filename in os.listdir(nwb_folder):
+    nwb_files = os.listdir(nwb_folder)
+    jobs = len(nwb_files)
+    for i, nwb_filename in enumerate(nwb_files):
         if ".nwb" not in nwb_filename:
+            jobs -= 1
             continue  # skip non-nwb files
 
         with NWBHDF5IO(f'{nwb_folder}/{nwb_filename}', "a") as io:  # open it
@@ -106,6 +109,7 @@ if __name__ == '__main__':
 
             if 'coordinate_data' in nwb.processing.keys():
                 print("Spatial data already present in this NWB file, proceeding..")
+                jobs -= 1
                 continue
             else:
                 print("Spatial data not yet present, adding it..")
@@ -134,3 +138,4 @@ if __name__ == '__main__':
             # write altered nwb file
             io.write(nwb)
             print(f'Successfully added spatial info to {nwb_filename}.')
+            print(f"Progress: {round(i / jobs * 100)}% done")
