@@ -27,8 +27,7 @@ if __name__ == '__main__':
     # find all .edf files (also works if all .edf files are in the root directory)
     edf_files = get_all_edf_files(edf_folder)
 
-    i = 0
-    for filename in edf_files:  # loop over all edf files
+    for i, filename in enumerate(edf_files):  # loop over all edf files
         if ".edf" not in filename:  # only consider .edf type
             continue
 
@@ -58,7 +57,6 @@ if __name__ == '__main__':
         }, index=[i])  # temp container
 
         df = pd.concat([df, tmp])  # concatenate metadata for this edf file to the rest
-        i += 1
 
     df.to_excel(settings['metadata'], index=False)
 
