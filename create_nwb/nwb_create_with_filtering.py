@@ -17,7 +17,7 @@ from ndx_events import TTLs
 from hdmf.backends.hdf5.h5_utils import H5DataIO
 
 from helper_functions import get_all_edf_files
-from filtering_functions import filtering
+from eeg_filtering_functions import filtering
 
 
 def create_nwb_file(settings, ses_descr, start_t, id, ses_id, arena):
@@ -188,7 +188,7 @@ def main():
     """
     Core of this file. Calls all other functions.
     """
-    with open('settings.json', "r") as f:
+    with open('../settings.json', "r") as f:
         settings = json.load(f)
 
     edf_folder = settings['edf_folder']

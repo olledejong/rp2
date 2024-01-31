@@ -87,7 +87,7 @@ def generate_module_components(data):
 
 # Starting point. Process starts here.
 if __name__ == '__main__':
-    with open('settings.json', "r") as f:  # load settings
+    with open('../settings.json', "r") as f:  # load settings
         settings = json.load(f)
 
     nwb_folder = settings['nwb_files_folder']

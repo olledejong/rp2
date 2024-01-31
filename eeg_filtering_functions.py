@@ -63,22 +63,3 @@ def filtering(x, s_freq, lp=0.5, hp=200, lower_val=0.006, higher_val=0.013, art=
         rej = np.where((rej > np.mean(rej) + art * np.std(rej)) | (rej < np.mean(rej) - art * np.std(rej)), np.nan, rej)
         return interpolate_nan(rej, pkind='linear')
     return rej
-
-
-def time_to_samples(time_str, s_freq):
-    """
-    The total number of seconds is multiplied by the sampling frequency to convert
-    the time duration from seconds to samples. This step ensures that the time duration
-    is expressed in the context of the discrete samples taken at the specified sampling rate.
-
-    :param time_str: time as string (sep = '-')
-    :param s_freq: sampling frequency
-    :return:
-    """
-    # split the time string and convert to int
-    time_parts = [int(x) for x in time_str.split('-')]
-
-    # calculate the total number of seconds
-    total_seconds = time_parts[0] * 3600 + time_parts[1] * 60 + time_parts[2]
-
-    return total_seconds * int(s_freq)
