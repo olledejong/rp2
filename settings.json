@@ -1,12 +1,12 @@
 {
  "edf_folder": "",
- "event_trace_folder": "",
  "coordinate_data_folder": "",
  "nwb_files_folder": "",
  "plots_folder": "",
  "epochs_folder": "",
  "subject_metadata": "",
  "metadata": "",
+ "psd_data_folder": "",
  "lab": "Kas_Lab",
  "experimenter": "Vasilis Siozos & Mirthe Ronde",
  "institution": "University of Groningen",
