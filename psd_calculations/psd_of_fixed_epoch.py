@@ -16,7 +16,7 @@ from mne.time_frequency import psd_array_multitaper
 
 if __name__ == '__main__':
     # load settings
-    with open(os.path.join(os.getcwd(), 'settings.json'), "r") as f:
+    with open('../settings.json', "r") as f:
         settings = json.load(f)
     nwb_folder = settings["nwb_files_folder"]  # path to folder that holds nwb files
 
