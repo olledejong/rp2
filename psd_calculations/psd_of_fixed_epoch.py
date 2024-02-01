@@ -14,6 +14,7 @@ import pandas as pd
 from pynwb import NWBHDF5IO
 from mne.time_frequency import psd_array_multitaper
 
+# Script starts here
 if __name__ == '__main__':
     # load settings
     with open('../settings.json', "r") as f:
