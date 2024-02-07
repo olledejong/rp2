@@ -1,3 +1,9 @@
+"""
+This file holds logic that extracts the state of the LED (on/off) in every frame
+of all videos located in the given video folder. This LED state extraction is done
+using the ROIs that are created using the identify_led_rois.py script.
+the ROIs
+"""
 import os
 import ast
 import cv2

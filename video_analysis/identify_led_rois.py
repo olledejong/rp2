@@ -1,3 +1,8 @@
+"""
+File that holds logic which allows the user to select a ROI on the first frame
+of all videos in a selected directory. These ROIs are then saved to a file with
+their accompanying video filename.
+"""
 import os
 import cv2
 import pandas as pd
