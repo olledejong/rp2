@@ -14,7 +14,40 @@ from pynwb import NWBHDF5IO
 from nwb_retrieval_functions import get_filtered_eeg, get_package_loss
 
 
-def epoch_eeg_fixed(nwb_file, epoch_length=5.0, relative_start=0, ploss_threshold=10):
+def get_raw_epochs(epoch_annotations, epochs_per_chan, genotype, info, subject_id):
+    raw_epochs_metadata = pd.DataFrame({
+        'animal_id': subject_id,
+        'genotype': genotype,
+        'epoch_annotation': epoch_annotations
+    })
+    raw_epochs = mne.EpochsArray(
+        data=np.stack(list(epochs_per_chan.values()), axis=1),
+        info=info,
+        metadata=raw_epochs_metadata
+    )
+    return raw_epochs
+
+
+def get_filtered_epochs(epoch_annotations, epochs_per_chan, genotype, info, start_end_times,
+                        subject_id):
+    start_end_times = np.array(start_end_times)
+    good_epochs_start_end = start_end_times[epoch_annotations]  # keep only the start-end times of the good epochs
+    filt_epoch_metadata = pd.DataFrame({
+        'animal_id': subject_id,
+        'genotype': genotype,
+        'epochs_start_end': good_epochs_start_end
+    })
+    # if needed, remove the bad epochs via boolean masking (epoch_annotations is the mask here)
+    cleaned_epochs = {channel: epochs_per_chan[channel][epoch_annotations] for channel in epochs_per_chan.keys()}
+    filtered_epochs = mne.EpochsArray(
+        data=np.stack(list(cleaned_epochs.values()), axis=1),
+        info=info,
+        metadata=filt_epoch_metadata
+    )
+    return filtered_epochs
+
+
+def epoch_eeg_fixed(nwb_folder, nwb_file, epoch_length=5.0, relative_start=0, ploss_threshold=10):
     """
     Creates epochs of a fixed length for EEG data of all channels and omits bad epochs
     based on a package-loss cutoff value (get_package_loss function). Returns both unfiltered
@@ -28,11 +61,6 @@ def epoch_eeg_fixed(nwb_file, epoch_length=5.0, relative_start=0, ploss_threshol
     :param ploss_threshold: threshold of maximum package loss (in milliseconds)
     :return: raw_epochs and filtered_epochs for this NWB file
     """
-    with open('settings.json', "r") as f:
-        settings = json.load(f)
-    nwb_folder = settings["nwb_files_folder"]  # path to folder with nwb files
-    epochs_folder = settings["epochs_folder"]  # path to folder with nwb files
-
     print(f"Epoching data for file {nwb_file}")
     nwb_file_path = os.path.join(nwb_folder, nwb_file)
     with NWBHDF5IO(nwb_file_path, "r") as io:
@@ -81,37 +109,33 @@ def epoch_eeg_fixed(nwb_file, epoch_length=5.0, relative_start=0, ploss_threshol
     ch_types = ["emg" if "EMG" in chan else "eeg" for chan in locations]
     info = mne.create_info(ch_names=list(locations), ch_types=ch_types, sfreq=s_freq)
 
-                                # Save raw epochs but with annotation
-
-    raw_epochs_metadata = pd.DataFrame({
-        'animal_id': subject_id,
-        'genotype': genotype,
-        'epoch_annotation': epoch_annotations
-    })
-    raw_epochs = mne.EpochsArray(
-        data=np.stack(list(epochs_per_chan.values()), axis=1),
-        info=info,
-        metadata=raw_epochs_metadata
-    )
-                                    # Save epochs without bad ones
-
-    start_end_times = np.array(start_end_times)
-    good_epochs_start_end = start_end_times[epoch_annotations]  # keep only the start-end times of the good epochs
-
-    filt_epoch_metadata = pd.DataFrame({
-        'animal_id': subject_id,
-        'genotype': genotype,
-        'epochs_start_end': good_epochs_start_end
-    })
-
-    # if needed, remove the bad epochs via boolean masking (epoch_annotations is the mask here)
-    cleaned_epochs = {channel: epochs_per_chan[channel][epoch_annotations] for channel in epochs_per_chan.keys()}
-
-    filtered_epochs = mne.EpochsArray(
-        data=np.stack(list(cleaned_epochs.values()), axis=1),
-        info=info,
-        metadata=filt_epoch_metadata
-    )
+    raw_epochs = get_raw_epochs(epoch_annotations, epochs_per_chan, genotype, info, subject_id)
+    filtered_epochs = get_filtered_epochs(epoch_annotations, epochs_per_chan, genotype, info,
+                                          start_end_times, subject_id)
 
     print(f"Done. {round(sum(epoch_annotations) / len(epochs) * 100, 1)}% of the epochs passed the filtering.")
     return raw_epochs, filtered_epochs
+
+
+def main():
+    with open('../settings.json', "r") as f:
+        settings = json.load(f)
+    nwb_folder = settings["nwb_files_folder"]  # path to folder with nwb files
+    epochs_folder = settings["epochs_folder"]  # path to folder with nwb files
+
+    for file in os.listdir(nwb_folder):
+        if not file.endswith(".nwb"):
+            continue
+
+        raw_epochs, filtered_epochs = epoch_eeg_fixed(nwb_folder, file)
+
+        raw_epochs.save(os.path.join(epochs_folder, f'raw_epochs_{file.split(".")[0]}-epo.fif'))
+        filtered_epochs.save(os.path.join(epochs_folder, f'filtered_epochs_{file.split(".")[0]}-epo.fif'))
+
+        print(f"Done with file {file}.")
+    print("Done with all NWB files.")
+
+
+if __name__ == '__main__':
+    main()
+
