@@ -56,6 +56,7 @@ def get_led_states(rois_df, vid_folder_path, snapshot_path):
         video_path = os.path.join(vid_folder_path, row['Video'])
         roi = ast.literal_eval(row['ROI'])
         cap = cv2.VideoCapture(video_path)
+        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
         frame_number, prev_frame, prev_state = 0, None, 0
 
@@ -81,6 +82,8 @@ def get_led_states(rois_df, vid_folder_path, snapshot_path):
             prev_state = state  # update state
             states.append(int(state))  # save state
             frame_number += 1  # increment frame counter
+
+            print('\r', f"{round(frame_number / total_frames * 100, 2)}% done..", end='')
 
         # close video and save led states
         cap.release()
