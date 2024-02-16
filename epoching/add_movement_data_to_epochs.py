@@ -142,14 +142,12 @@ def main():
     all epochs and saves this to the filesystem.
     :return:
     """
-    no_spatial_data_ids = [81218, 81217, 39508, 39489]  # from previous analysis we know these do not have xy data
     fps = 30  # frames-per-second of video
     resting_cutoff = 0  # number of frames of movement that is allowed in one epoch
 
     settings = get_settings("../settings.json")
     nwb_folder, metadata_path = settings["nwb_files_folder"], settings["metadata"]
     epochs_folder, video_folder = settings["epochs_folder"], settings["video_folder"]
-    plot_folder = settings["plots_folder"]
 
     all_epochs = []
     # loop through the nwb files (1 for each subject)
