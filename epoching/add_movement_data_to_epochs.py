@@ -56,7 +56,7 @@ def get_movement_per_epoch(epochs_array, movement_data, non_movement_cutoff):
 
     :param epochs_array:
     :param movement_data:
-    :param non_movement_cutoff:
+    :param non_movement_cutoff: integer that defines the cutoff for 'non-movement'
     :return:
     """
     # add new column to metadata holding the movement boolean value (initially we set them all to 'moving'
@@ -68,8 +68,8 @@ def get_movement_per_epoch(epochs_array, movement_data, non_movement_cutoff):
         # use the start and end in frames to get the accompanying movement data
         frame_start, frame_end = int(np.floor(epoch_start_frame)), int(np.ceil(epoch_end_frame))
 
-        # if there's no movement in this epoch, update the dataframe
-        if np.sum(movement_data[frame_start:frame_end]) == non_movement_cutoff:
+        # if there's no/not so much movement in this epoch, tag this epoch as 'not moving'
+        if np.sum(movement_data[frame_start:frame_end]) <= non_movement_cutoff:
             movement_col[i] = False
     return movement_col
 
