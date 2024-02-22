@@ -1,11 +1,12 @@
 """
-This script epochs the EEG data in various ways. For now only fixed length epochs are supported.
+This script epochs the EEG data. The result is a raw and a filtered epoch file for every subject.
 
 author: Olle, based on work by Vasilis
 """
 import os
 import mne
 import json
+import pickle
 import ndx_events
 import numpy as np
 import pandas as pd
@@ -14,55 +15,132 @@ from pynwb import NWBHDF5IO
 from nwb_retrieval_functions import get_filtered_eeg, get_package_loss
 
 
-def get_raw_epochs(epoch_annotations, epochs_per_chan, genotype, info, subject_id):
-    raw_epochs_metadata = pd.DataFrame({
-        'animal_id': subject_id,
-        'genotype': genotype,
-        'epoch_annotation': epoch_annotations
-    })
-    raw_epochs = mne.EpochsArray(
-        data=np.stack(list(epochs_per_chan.values()), axis=1),
-        info=info,
-        metadata=raw_epochs_metadata
-    )
-    return raw_epochs
+def get_subject_metadata(metadata_path, mouse_id):
+    metadata_df = pd.read_excel(metadata_path)
+    return metadata_df[metadata_df['mouseId'] == mouse_id]
 
 
-def get_filtered_epochs(epoch_annotations, epochs_per_chan, genotype, info, start_end_times,
-                        subject_id):
-    start_end_times = np.array(start_end_times)
-    good_epochs_start_end = start_end_times[epoch_annotations]  # keep only the start-end times of the good epochs
+def get_led_onset_data(video_folder, movie_filename):
+    """
+    Loads the correct LED onset data from the pickle file which holds the LED
+    onset data for all experiment videos.
+
+    :param video_folder:
+    :param movie_filename:
+    :return:
+    """
+    print(f"Retrieving accompanying LED state data from file {movie_filename}")
+    with open(f'{video_folder}/pickle/led_states_all_videos.pickle', "rb") as f:
+        led_states = pickle.load(f)
+        led_states = led_states[movie_filename]
+        return led_states
+
+
+def sample_to_frame(eeg_tp_in_samples, adjusted_fps, s_freq, offset):
+    """
+    Function that calculates the time-point of the video (in frames) given
+     the sample number in the EEG.
+    """
+    eeg_tp_secs = eeg_tp_in_samples / s_freq  # from samples to seconds
+    video_tp_secs = eeg_tp_secs - offset  # subtract the offset so we have the video tp in secs
+
+    return video_tp_secs * adjusted_fps  # go to frames
+
+
+def adjust_fps_get_offset(settings, eeg_signal, subject_id, eeg_onsets, s_freq):
+    """
+    Adjusts the FPS that is used to go from EEG sample number to Video Frame number.
+    :param settings:
+    :param eeg_signal: one of the channel's signal to calculate the length from first to last eeg ttl onset
+    :param subject_id:
+    :param eeg_onsets:
+    :param s_freq:
+    :return: the adjusted framerate
+    """
+    metadata_path, video_folder = settings["metadata"], settings["video_folder"]
+
+    # get the subject's metadata from the file (holds video filename that points to right LED states)
+    subject_metadata = get_subject_metadata(metadata_path, int(subject_id))
+    movie_filename = subject_metadata["movie_filename"].iloc[0]  # movie filename the subject's in
+
+    # get the LED states for this subject (i.e. get the LED states of the correct video)
+    # and then get the frames where the LED turned ON (i.e. get all boolean event changes from OFF to ON (0 to 1)
+    led_onsets = get_led_onset_data(video_folder, movie_filename)
+    led_onsets = np.where(np.logical_and(np.diff(led_onsets), led_onsets[1:]))[0] + 1
+
+    # Find length of eeg signal between the two pulse combination. For example first and last
+    eeg_len = eeg_signal[int(s_freq * eeg_onsets[0]): int(s_freq * eeg_onsets[-1])].shape[0]
+
+    # find length of video frames between the two pulse combination
+    frame_len = led_onsets[-1] - led_onsets[0]
+
+    adjusted_fps = (frame_len / (eeg_len / s_freq))
+
+    first_ttl_onset_secs = eeg_onsets[0] / s_freq
+    first_led_onset_secs = led_onsets[0] / adjusted_fps
+    offset_secs = first_ttl_onset_secs - first_led_onset_secs
+
+    return adjusted_fps, offset_secs
+
+
+def get_epochs(good_epochs, epochs_per_chan, genotype, info, se_tps_sample, se_tps_frames, subject_id):
+    """
+
+    :param good_epochs: array holding boolean for each epoch: 1 is good, 0 is bad
+    :param epochs_per_chan: dict holding all epochs per channel
+    :param genotype:
+    :param info:
+    :param se_tps_sample: start and end time-point of the epoch in samples
+    :param se_tps_frames: start and end time-point of the epoch in frames
+    :param subject_id:
+    :return:
+    """
+    se_tps_sample_arr, se_tps_frame_arr = np.array(se_tps_sample), np.array(se_tps_frames)
+
+    # keep only the start-end times of the good epochs
+    good_epochs_se_sample = se_tps_sample_arr[good_epochs]
+    good_epochs_se_frame = se_tps_frame_arr[good_epochs]
+
+    # generate filtered epochs
     filt_epoch_metadata = pd.DataFrame({
         'animal_id': subject_id,
         'genotype': genotype,
-        'epochs_start_end': good_epochs_start_end
+        'epochs_start_end_samples': good_epochs_se_sample,
+        'epochs_start_end_frames': good_epochs_se_frame
     })
     # if needed, remove the bad epochs via boolean masking (epoch_annotations is the mask here)
-    cleaned_epochs = {channel: epochs_per_chan[channel][epoch_annotations] for channel in epochs_per_chan.keys()}
+    cleaned_epochs = {channel: epochs_per_chan[channel][good_epochs] for channel in epochs_per_chan.keys()}
     filtered_epochs = mne.EpochsArray(
         data=np.stack(list(cleaned_epochs.values()), axis=1),
         info=info,
         metadata=filt_epoch_metadata
     )
-    return filtered_epochs
+
+    # generate raw epochs
+    raw_epochs_metadata = pd.DataFrame({'animal_id': subject_id, 'genotype': genotype, 'good_epochs': good_epochs})
+    raw_epochs = mne.EpochsArray(
+        data=np.stack(list(epochs_per_chan.values()), axis=1),
+        info=info,
+        metadata=raw_epochs_metadata
+    )
+    return raw_epochs, filtered_epochs
 
 
-def epoch_eeg_fixed(nwb_folder, nwb_file, epoch_length=5.0, relative_start=0, ploss_threshold=10):
+def epoch_eeg_fixed(settings, nwb_file, epoch_length=5.0, ploss_threshold=10):
     """
     Creates epochs of a fixed length for EEG data of all channels and omits bad epochs
     based on a package-loss cutoff value (get_package_loss function). Returns both unfiltered
-    and filtered epocharrays.
+    and filtered epoch-arrays.
 
     If last epoch is shorter than 'epoch_length', then it is omitted.
 
-    :param nwb_file: nwb file name
+    :param settings: settings json object holding all paths to data
+    :param nwb_file: specific nwb file name
     :param epoch_length: desired length of epochs (in seconds)
-    :param relative_start: starting point of epoching (in seconds)
     :param ploss_threshold: threshold of maximum package loss (in milliseconds)
     :return: raw_epochs and filtered_epochs for this NWB file
     """
-    print(f"Epoching data for file {nwb_file}")
-    nwb_file_path = os.path.join(nwb_folder, nwb_file)
+    nwb_file_path = os.path.join(settings["nwb_files_folder"], nwb_file)
     with NWBHDF5IO(nwb_file_path, "r") as io:
         nwb = io.read()
 
@@ -70,65 +148,83 @@ def epoch_eeg_fixed(nwb_folder, nwb_file, epoch_length=5.0, relative_start=0, pl
         filtering = nwb.acquisition['filtered_EEG'].filtering
         locations = nwb.electrodes.location.data[:]  # get all electrode locations (1-d array)
         s_freq = nwb.acquisition['filtered_EEG'].rate  # sampling frequency of the EEG
+        eeg_ttl_onsets_secs = list(nwb.acquisition["TTL_1"].timestamps)
         subject_id = nwb.subject.subject_id  # subject id
         genotype = nwb.subject.genotype  # genotype of the subject
 
-    print(f"Data is loaded. Subject id: {subject_id}. Genotype: {genotype}. Sampling frequency: {s_freq}.")
-    epochs_per_chan = {}  # to store epochs in
-    start_end_times = []  # to keep the starting and end-point (in samples) of the epochs
-    samples_per_epoch, relative_start = int(epoch_length * s_freq), int(relative_start * s_freq)
+    # as we noticed the fps is not exactly 30, we have to recalculate it to properly align the EEG and Video
+    adjusted_fps, offset = adjust_fps_get_offset(settings, filtered_eeg[0], subject_id, eeg_ttl_onsets_secs, s_freq)
 
-    print("Starting with creating epochs and filtering out bad ones.")
-    epochs = range(0, filtered_eeg.shape[1], samples_per_epoch)  # with increments of size 'samples_per_epoch'
-    epoch_annotations = np.ones(len(epochs), dtype=bool)  # True for good epoch, False for bad epoch
+    start_end_tps_s, start_end_tps_f = [], []  # to keep the starting and end-point of the epochs (samples & frames)
 
-    for nth_epoch, start_sample in enumerate(epochs):  # loop through epochs in n_samples (not seconds)
-        epoch_start = start_sample + relative_start
+    # calculate the amount of samples that are in 1 epoch (samples_per_epoch), and generate a range with the length of
+    # the EEG signal with increments of 'samples_per_epoch'
+    samples_per_epoch = int(epoch_length * s_freq)
+    epoch_start_points = range(0, filtered_eeg.shape[1], samples_per_epoch)
+
+    # array that is later used as a mask for the 'good' epochs
+    good_epochs = np.ones(len(epoch_start_points), dtype=bool)
+
+    # create a dictionary in which all the epochs will be stored per channel (and fill it with placeholder arrays)
+    epochs_per_chan = {}
+    for chan in locations:
+        epochs_per_chan[chan] = np.zeros((len(epoch_start_points), samples_per_epoch))
+
+    print("Creating epochs.. (both raw and filtered)")
+    # loop through all epochs start points, get the epoch end time-point and create the epochs
+    for nth_epoch, epoch_start in enumerate(epoch_start_points):
+        # store the start and end time-points in samples for this epoch
         epoch_end = epoch_start + samples_per_epoch
-        start_end_times.append(f"{epoch_start}-{epoch_end}")
+        start_end_tps_s.append(f"{epoch_start}-{epoch_end}")
 
+        # convert the start and end time-points of this epoch from samples to frames
+        frame_start = sample_to_frame(int(epoch_start), adjusted_fps, s_freq, offset)
+        frame_end = sample_to_frame(int(epoch_end), adjusted_fps, s_freq, offset)
+        # and store them as well
+        start_end_tps_f.append(f"{frame_start}-{frame_end}")
+
+        # get the filtered eeg belonging to this epoch, and get the package loss in this epoch
         filtered_eeg_epoch = get_filtered_eeg(nwb_file_path, (epoch_start, epoch_end), True)
         ploss, _ = get_package_loss(nwb_file_path, (epoch_start, epoch_end), locations, filtering)
 
-        # loop through the epoched eeg data for per channel
-        for location, eeg in filtered_eeg_epoch.items():
-            if len(eeg) != samples_per_epoch:  # skip epochs that are not of length 'samples_per_epoch'
+        # loop through the eeg data per channel for this epoch
+        for channel, eeg in filtered_eeg_epoch.items():
+            # skip epochs that are not of length 'samples_per_epoch'
+            if len(eeg) != samples_per_epoch:
                 continue
-            if location not in epochs_per_chan:  # if not saved
-                epochs_per_chan[location] = np.zeros((len(epochs), samples_per_epoch))
-            epochs_per_chan[location][nth_epoch] = eeg  # save eeg data
+            # add this epoch's eeg data for the looped channel to the dictionary
+            epochs_per_chan[channel][nth_epoch] = eeg
 
             # if there's too much packages loss in this channel, tag this epoch as 'bad'
-            if np.sum(np.isnan(ploss[location])) > int(s_freq * ploss_threshold / 1000):
-                epoch_annotations[nth_epoch] = False
+            if np.sum(np.isnan(ploss[channel])) > int(s_freq * ploss_threshold / 1000):
+                good_epochs[nth_epoch] = False
 
-        print('\r', f"{round(nth_epoch / len(epochs) * 100, 1)}% done..", end='')
+        print('\r', f"{round(nth_epoch / len(epoch_start_points) * 100, 1)}% done..", end='')
     print("\nDone.")
 
     # generate info object needed for creation of MNE RawArray object
     ch_types = ["emg" if "EMG" in chan else "eeg" for chan in locations]
     info = mne.create_info(ch_names=list(locations), ch_types=ch_types, sfreq=s_freq)
 
-    raw_epochs = get_raw_epochs(epoch_annotations, epochs_per_chan, genotype, info, subject_id)
-    filtered_epochs = get_filtered_epochs(epoch_annotations, epochs_per_chan, genotype, info,
-                                          start_end_times, subject_id)
+    r_epochs, f_epochs = get_epochs(good_epochs, epochs_per_chan, genotype, info, start_end_tps_s, start_end_tps_f, subject_id)
+    print(f"Done. {round(sum(good_epochs) / len(epoch_start_points) * 100, 1)}% of the epochs passed the filtering.")
 
-    print(f"Done. {round(sum(epoch_annotations) / len(epochs) * 100, 1)}% of the epochs passed the filtering.")
-    return raw_epochs, filtered_epochs
+    return r_epochs, f_epochs
 
 
 def main():
     with open('../settings.json', "r") as f:
         settings = json.load(f)
-    nwb_folder = settings["nwb_files_folder"]  # path to folder with nwb files
     epochs_folder = settings["epochs_folder"]  # path to folder with nwb files
 
-    for file in os.listdir(nwb_folder):
+    for file in os.listdir(settings["nwb_files_folder"]):
         if not file.endswith(".nwb"):
             continue
 
-        raw_epochs, filtered_epochs = epoch_eeg_fixed(nwb_folder, file)
+        # generate the raw and filtered epoch arrays
+        raw_epochs, filtered_epochs = epoch_eeg_fixed(settings, file)
 
+        # save the raw and filtered epochs for this subject
         raw_epochs.save(os.path.join(epochs_folder, f'raw_epochs_{file.split(".")[0]}-epo.fif'))
         filtered_epochs.save(os.path.join(epochs_folder, f'filtered_epochs_{file.split(".")[0]}-epo.fif'))
 
@@ -138,4 +234,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
