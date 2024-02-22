@@ -15,9 +15,16 @@ from pynwb import NWBHDF5IO
 from nwb_retrieval_functions import get_filtered_eeg, get_package_loss
 
 
-def get_subject_metadata(metadata_path, mouse_id):
+def get_subject_metadata(metadata_path, subject_id):
+    """
+    Retrieves the metadata dataframe for the given subject
+
+    :param metadata_path:
+    :param subject_id:
+    :return:
+    """
     metadata_df = pd.read_excel(metadata_path)
-    return metadata_df[metadata_df['mouseId'] == mouse_id]
+    return metadata_df[metadata_df['mouseId'] == subject_id]
 
 
 def get_led_onset_data(video_folder, movie_filename):
@@ -38,8 +45,13 @@ def get_led_onset_data(video_folder, movie_filename):
 
 def sample_to_frame(eeg_tp_in_samples, adjusted_fps, s_freq, offset):
     """
-    Function that calculates the time-point of the video (in frames) given
-     the sample number in the EEG.
+    Function that calculates the time-point of the video (in frames) given the sample number in the EEG.
+
+    :param eeg_tp_in_samples:
+    :param adjusted_fps:
+    :param s_freq:
+    :param offset:
+    :return:
     """
     eeg_tp_secs = eeg_tp_in_samples / s_freq  # from samples to seconds
     video_tp_secs = eeg_tp_secs - offset  # subtract the offset so we have the video tp in secs
@@ -50,6 +62,7 @@ def sample_to_frame(eeg_tp_in_samples, adjusted_fps, s_freq, offset):
 def adjust_fps_get_offset(settings, eeg_signal, subject_id, eeg_onsets, s_freq):
     """
     Adjusts the FPS that is used to go from EEG sample number to Video Frame number.
+
     :param settings:
     :param eeg_signal: one of the channel's signal to calculate the length from first to last eeg ttl onset
     :param subject_id:
@@ -85,6 +98,8 @@ def adjust_fps_get_offset(settings, eeg_signal, subject_id, eeg_onsets, s_freq):
 
 def get_epochs(good_epochs, epochs_per_chan, genotype, info, se_tps_sample, se_tps_frames, subject_id):
     """
+    Generates an EpochArray object for the raw and the filtered epochs. Some metadata on the start
+    and end time-points of the epochs is also added to the object. This can be of use later.
 
     :param good_epochs: array holding boolean for each epoch: 1 is good, 0 is bad
     :param epochs_per_chan: dict holding all epochs per channel
@@ -213,6 +228,12 @@ def epoch_eeg_fixed(settings, nwb_file, epoch_length=5.0, ploss_threshold=10):
 
 
 def main():
+    """
+    Main function of the script. Loops through all NWB files and generates both raw and filtered
+    epoch arrays for them. The raw and filtered epochs per subject are saved in individual files.
+    These files can later be used to add movement/behaviour data to.
+    :return:
+    """
     with open('../settings.json', "r") as f:
         settings = json.load(f)
     epochs_folder = settings["epochs_folder"]  # path to folder with nwb files
