@@ -12,32 +12,9 @@ import numpy as np
 from pynwb import NWBHDF5IO
 
 
-def calculate_offset(eeg_onsets, led_onsets, s_freq, video_fps):
-    """
-    Calculates the difference in time between the video and eeg that elapses from
-    the start of the recording until the first onset (LED/TTL)
-
-    :param eeg_onsets:
-    :param led_onsets:
-    :param s_freq:
-    :param video_fps:
-    :return:
-    """
-    # get the frames where the LED turned ON (i.e. get all boolean event changes from OFF to ON (0 to 1)
-    led_turns_on_frames = np.where(np.logical_and(np.diff(led_onsets), led_onsets[1:]))[0] + 1
-
-    first_ttl_onset = eeg_onsets[0]
-    first_led_onset = led_turns_on_frames[0]
-
-    first_ttl_onset_secs = first_ttl_onset / s_freq
-    first_led_onset_secs = first_led_onset / video_fps
-
-    return first_ttl_onset_secs - first_led_onset_secs
-
-
 def get_epoch_array(subject_id, epochs_folder):
     """
-    Loads the epoch array that belongs to the given subject.
+    Loads the epoch array that belongs to the given subject from folder 'epochs_folder'
 
     :param subject_id:
     :param epochs_folder:
@@ -98,8 +75,7 @@ def main():
             nwb = io.read()
             subject_id = nwb.subject.subject_id
             genotype = nwb.subject.genotype
-
-            try:  # not all nwb files have movement data
+            try:  # not all nwb files might have movement data (e.g. unavailable/untrackable)
                 movement_data = nwb.processing["coordinate_data"]["motion"].data[:]
             except KeyError:
                 print(f"No movement data for subject {subject_id}, proceeding..")
