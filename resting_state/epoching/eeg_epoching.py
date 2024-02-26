@@ -234,7 +234,7 @@ def main():
     These files can later be used to add movement/behaviour data to.
     :return:
     """
-    with open('../settings.json', "r") as f:
+    with open('../../settings.json', "r") as f:
         settings = json.load(f)
     epochs_folder = settings["epochs_folder"]  # path to folder with nwb files
 

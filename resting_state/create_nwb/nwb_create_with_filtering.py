@@ -188,7 +188,7 @@ def main():
     """
     Core of this file. Calls all other functions.
     """
-    with open('../settings.json', "r") as f:
+    with open('../../settings.json', "r") as f:
         settings = json.load(f)
 
     edf_folder = settings['edf_folder']
