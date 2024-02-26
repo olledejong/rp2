@@ -26,7 +26,7 @@ def get_epoch_array(subject_id, epochs_folder):
             return epochs_array
 
 
-def get_movement_per_epoch(epochs_array, movement_data, non_movement_cutoff):
+def get_movement_for_subject(epochs_array, movement_data, non_movement_cutoff):
     """
     Checks whether the subject is moving during each epoch and this information is stored
     in an array. This array is eventually saved within the metadata of the subject's epoch object
@@ -41,6 +41,7 @@ def get_movement_per_epoch(epochs_array, movement_data, non_movement_cutoff):
     # set the new column to false for the epochs where there's no movement
     for i, epoch in enumerate(epochs_array):
         epoch_start_frame, epoch_end_frame = epochs_array.metadata.iloc[i]["epochs_start_end_frames"].split("-")
+        epoch_start_frame, epoch_end_frame = float(epoch_start_frame), float(epoch_end_frame)
 
         # use the start and end in frames to get the accompanying movement data
         frame_start, frame_end = int(np.floor(epoch_start_frame)), int(np.ceil(epoch_end_frame))
@@ -59,7 +60,7 @@ def main():
     """
     resting_cutoff = 0  # number of frames of movement that is allowed in one epoch
 
-    with open("../settings.json", "r") as f:
+    with open("../../settings.json", "r") as f:
         settings = json.load(f)
     nwb_folder, epochs_folder = settings["nwb_files_folder"], settings["epochs_folder"]
 
@@ -86,7 +87,7 @@ def main():
         # load the accompanying filtered epochs file
         epochs_array = get_epoch_array(subject_id, epochs_folder)
         # generate the column that holds the movement data
-        movement_col = get_movement_per_epoch(epochs_array, movement_data, resting_cutoff)
+        movement_col = get_movement_for_subject(epochs_array, movement_data, resting_cutoff)
 
         # save the movement column to the subject's metadata
         epochs_array.metadata["movement"] = movement_col
@@ -96,7 +97,7 @@ def main():
 
     print("Saved epochs of each subject in individual file, now attempting to concatenate them as well..")
     # concatenate and save all epochs
-    concatenated_epochs = mne.concatenate_epochs(all_epochs, add_offset=True)
+    concatenated_epochs = mne.concatenate_epochs(all_epochs)
     concatenated_epochs.save(os.path.join(epochs_folder, "filtered_epochs_w_movement-epo.fif"))
     print("Done, bye.")
 
