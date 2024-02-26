@@ -8,15 +8,15 @@ general = {
 }
 
 paths = {
- "edf_folder": "/Users/olledejong/Documents/MSc_Biology/ResearchProject2/rp2_data/resting_state/input/EEG",
- "coordinate_data_folder": "/Users/olledejong/Documents/MSc_Biology/ResearchProject2/rp2_data/resting_state/input/coordinate_data",
- "nwb_files_folder": "/Users/olledejong/Documents/MSc_Biology/ResearchProject2/rp2_data/resting_state/output/nwb",
- "plots_folder": "/Users/olledejong/Documents/MSc_Biology/ResearchProject2/rp2_data/resting_state/output/plots",
- "epochs_folder": "/Users/olledejong/Documents/MSc_Biology/ResearchProject2/rp2_data/resting_state/output/epochs",
- "subject_metadata": "/Users/olledejong/Documents/MSc_Biology/ResearchProject2/rp2_data/DRD2_EEG_all_animal_info.xlsx",
- "metadata": "/Users/olledejong/Documents/MSc_Biology/ResearchProject2/rp2_data/resting_state/output/metadata/resting-state_metadata.xlsx",
- "psd_data_folder": "/Users/olledejong/Documents/MSc_Biology/ResearchProject2/rp2_data/resting_state/output/psd",
- "video_folder": "/Users/olledejong/Documents/MSc_Biology/ResearchProject2/rp2_data/resting_state/output/videos"
+ "edf_folder": "",
+ "coordinate_data_folder": "",
+ "nwb_files_folder": "",
+ "plots_folder": "",
+ "epochs_folder": "",
+ "subject_metadata": "",
+ "metadata": "",
+ "psd_data_folder": "",
+ "video_folder": ""
 }
 
 filtering = {
