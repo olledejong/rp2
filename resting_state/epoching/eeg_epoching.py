@@ -5,7 +5,6 @@ author: Olle, based on work by Vasilis
 """
 import os
 import mne
-import json
 import pickle
 import ndx_events
 import numpy as np
@@ -13,6 +12,7 @@ import pandas as pd
 from pynwb import NWBHDF5IO
 
 from nwb_retrieval_functions import get_filtered_eeg, get_package_loss
+from settings import paths
 
 
 def get_subject_metadata(metadata_path, subject_id):
@@ -59,18 +59,17 @@ def sample_to_frame(eeg_tp_in_samples, adjusted_fps, s_freq, offset):
     return video_tp_secs * adjusted_fps  # go to frames
 
 
-def adjust_fps_get_offset(settings, eeg_signal, subject_id, eeg_onsets, s_freq):
+def adjust_fps_get_offset(eeg_signal, subject_id, eeg_onsets, s_freq):
     """
     Adjusts the FPS that is used to go from EEG sample number to Video Frame number.
 
-    :param settings:
     :param eeg_signal: one of the channel's signal to calculate the length from first to last eeg ttl onset
     :param subject_id:
     :param eeg_onsets:
     :param s_freq:
     :return: the adjusted framerate
     """
-    metadata_path, video_folder = settings["metadata"], settings["video_folder"]
+    metadata_path, video_folder = paths["metadata"], paths["video_folder"]
 
     # get the subject's metadata from the file (holds video filename that points to right LED states)
     subject_metadata = get_subject_metadata(metadata_path, int(subject_id))
@@ -141,7 +140,7 @@ def get_epochs(good_epochs, epochs_per_chan, genotype, info, se_tps_sample, se_t
     return raw_epochs, filtered_epochs
 
 
-def epoch_eeg_fixed(settings, nwb_file, epoch_length=5.0, ploss_threshold=10):
+def epoch_eeg_fixed(nwb_file, epoch_length=5.0, ploss_threshold=10):
     """
     Creates epochs of a fixed length for EEG data of all channels and omits bad epochs
     based on a package-loss cutoff value (get_package_loss function). Returns both unfiltered
@@ -149,13 +148,12 @@ def epoch_eeg_fixed(settings, nwb_file, epoch_length=5.0, ploss_threshold=10):
 
     If last epoch is shorter than 'epoch_length', then it is omitted.
 
-    :param settings: settings json object holding all paths to data
     :param nwb_file: specific nwb file name
     :param epoch_length: desired length of epochs (in seconds)
     :param ploss_threshold: threshold of maximum package loss (in milliseconds)
     :return: raw_epochs and filtered_epochs for this NWB file
     """
-    nwb_file_path = os.path.join(settings["nwb_files_folder"], nwb_file)
+    nwb_file_path = os.path.join(paths["nwb_files_folder"], nwb_file)
     with NWBHDF5IO(nwb_file_path, "r") as io:
         nwb = io.read()
 
@@ -168,7 +166,7 @@ def epoch_eeg_fixed(settings, nwb_file, epoch_length=5.0, ploss_threshold=10):
         genotype = nwb.subject.genotype  # genotype of the subject
 
     # as we noticed the fps is not exactly 30, we have to recalculate it to properly align the EEG and Video
-    adjusted_fps, offset = adjust_fps_get_offset(settings, filtered_eeg[0], subject_id, eeg_ttl_onsets_secs, s_freq)
+    adjusted_fps, offset = adjust_fps_get_offset(filtered_eeg[0], subject_id, eeg_ttl_onsets_secs, s_freq)
 
     start_end_tps_s, start_end_tps_f = [], []  # to keep the starting and end-point of the epochs (samples & frames)
 
@@ -234,20 +232,16 @@ def main():
     These files can later be used to add movement/behaviour data to.
     :return:
     """
-    with open('../../settings.json', "r") as f:
-        settings = json.load(f)
-    epochs_folder = settings["epochs_folder"]  # path to folder with nwb files
-
-    for file in os.listdir(settings["nwb_files_folder"]):
+    for file in os.listdir(paths["nwb_files_folder"]):
         if not file.endswith(".nwb"):
             continue
 
         # generate the raw and filtered epoch arrays
-        raw_epochs, filtered_epochs = epoch_eeg_fixed(settings, file)
+        raw_epochs, filtered_epochs = epoch_eeg_fixed(file)
 
         # save the raw and filtered epochs for this subject
-        raw_epochs.save(os.path.join(epochs_folder, f'raw_epochs_{file.split(".")[0]}-epo.fif'))
-        filtered_epochs.save(os.path.join(epochs_folder, f'filtered_epochs_{file.split(".")[0]}-epo.fif'))
+        raw_epochs.save(os.path.join(paths["epochs_folder"], f'raw_epochs_{file.split(".")[0]}-epo.fif'))
+        filtered_epochs.save(os.path.join(paths["epochs_folder"], f'filtered_epochs_{file.split(".")[0]}-epo.fif'))
 
         print(f"Done with file {file}.")
     print("Done with all NWB files.")

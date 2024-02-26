@@ -6,10 +6,11 @@ epoch or not.
 """
 import os
 import mne
-import json
 import ndx_events
 import numpy as np
 from pynwb import NWBHDF5IO
+
+from settings import paths
 
 
 def get_epoch_array(subject_id, epochs_folder):
@@ -59,10 +60,7 @@ def main():
     :return:
     """
     resting_cutoff = 0  # number of frames of movement that is allowed in one epoch
-
-    with open("../../settings.json", "r") as f:
-        settings = json.load(f)
-    nwb_folder, epochs_folder = settings["nwb_files_folder"], settings["epochs_folder"]
+    nwb_folder, epochs_folder = paths["nwb_files_folder"], paths["epochs_folder"]
 
     all_epochs = []
     # loop through the nwb files (1 for each subject)

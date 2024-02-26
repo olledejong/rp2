@@ -4,28 +4,20 @@ from one single subject metadata file.
 """
 import re
 import sys
-import json
 import pandas as pd
 
 from helper_functions import get_all_edf_files
+from settings import paths
 
 # Starting point. Process starts here.
 if __name__ == '__main__':
-
-    # load the project settings (directory paths etc)
-    with open('settings.json', "r") as f:
-        settings = json.load(f)
-
-    subject_metadata = settings['subject_metadata']
-    edf_folder = settings['edf_folder']
-
     # load the subject metadata
-    sub_meta = pd.read_excel(settings['subject_metadata'], dtype={'mouseName': str, 'mouseId': str})
+    sub_meta = pd.read_excel(paths['subject_metadata'], dtype={'mouseName': str, 'mouseId': str})
 
     df = pd.DataFrame()  # empty dataframe to store all data in
 
     # find all .edf files (also works if all .edf files are in the root directory)
-    edf_files = get_all_edf_files(edf_folder)
+    edf_files = get_all_edf_files(paths['edf_folder'])
 
     for i, filename in enumerate(edf_files):  # loop over all edf files
         if ".edf" not in filename:  # only consider .edf type
@@ -58,6 +50,6 @@ if __name__ == '__main__':
 
         df = pd.concat([df, tmp])  # concatenate metadata for this edf file to the rest
 
-    df.to_excel(settings['metadata'], index=False)
+    df.to_excel(paths['metadata'], index=False)
 
     sys.exit(0)  # done, terminating..

@@ -18,12 +18,13 @@ from hdmf.backends.hdf5.h5_utils import H5DataIO
 
 from helper_functions import get_all_edf_files
 from eeg_filtering_functions import filtering
+from settings import general, paths, filtering
 
 
-def create_nwb_file(settings, ses_descr, start_t, id, ses_id, arena):
-    experimenter = settings['experimenter']
-    institution = settings['institution']
-    lab = settings['lab']
+def create_nwb_file(ses_descr, start_t, id, ses_id, arena):
+    experimenter = general['experimenter']
+    institution = general['institution']
+    lab = general['lab']
 
     print('Creating NWB file...')
     # Create NWB file
@@ -40,12 +41,12 @@ def create_nwb_file(settings, ses_descr, start_t, id, ses_id, arena):
     return nwb
 
 
-def load_metadata(file, metadata_folder, settings):
+def load_metadata(edf_file, metadata_file):
     # Load metadata file
-    metadata = pd.read_excel(metadata_folder, dtype={'mouseName': str, 'mouseId': str})
+    metadata = pd.read_excel(metadata_file, dtype={'mouseName': str, 'mouseId': str})
 
     # Get metadata info
-    filename = re.split('/', file)[-1]  # split absolute path on last occurrence of '/'
+    filename = re.split('/', edf_file)[-1]  # split absolute path on last occurrence of '/'
     info = metadata[metadata['edf'] == filename].to_dict(orient='records')[0]
 
     # Prep NWB file metadata
@@ -57,7 +58,7 @@ def load_metadata(file, metadata_folder, settings):
     arena = f'Arena_{info["arena"]}'
 
     # create NWB file using metadata
-    return info, identifier, create_nwb_file(settings, session_description, start_time, identifier, session_id, arena)
+    return info, identifier, create_nwb_file(session_description, start_time, identifier, session_id, arena)
 
 
 def add_subject_info(nwb, info):
@@ -73,10 +74,10 @@ def add_subject_info(nwb, info):
     return nwb
 
 
-def add_electrode_info(nwb, info, settings):
+def add_electrode_info(nwb, info):
     print('Adding electrode information...')
 
-    electrode_info = settings['electrode_info']
+    electrode_info = filtering['electrode_info']
 
     # Add device and electrode information
     device = nwb.create_device(
@@ -110,10 +111,10 @@ def add_electrode_info(nwb, info, settings):
     return nwb
 
 
-def add_eeg_data(nwb, file, settings):
+def add_eeg_data(nwb, file):
     print('Adding EEG data...')
 
-    electrode_info = settings['electrode_info']
+    electrode_info = filtering['electrode_info']
 
     # Add raw EEG data
     raw = mne.io.read_raw_edf(file)
@@ -136,13 +137,13 @@ def add_eeg_data(nwb, file, settings):
     return nwb, raw, sfreq, all_table_region
 
 
-def add_filtered_eeg(nwb, settings, raw, sfreq, all_table_region):
+def add_filtered_eeg(nwb, raw, sfreq, all_table_region):
     print('Filtering EEG..')
 
-    electrode_info = settings['electrode_info']
-    lcut, hcut = settings['lcut'], settings['hcut']
-    low_val, high_val = settings['low_val'], settings['high_val']
-    art = settings['art']
+    electrode_info = filtering['electrode_info']
+    lcut, hcut = filtering['lcut'], filtering['hcut']
+    low_val, high_val = filtering['low_val'], filtering['high_val']
+    art = filtering['art']
 
     filt = []
     for channel in electrode_info.keys():
@@ -188,12 +189,9 @@ def main():
     """
     Core of this file. Calls all other functions.
     """
-    with open('../../settings.json', "r") as f:
-        settings = json.load(f)
-
-    edf_folder = settings['edf_folder']
-    nwb_output_folder = settings['nwb_files_folder']
-    metadata_file = settings['metadata']
+    edf_folder = paths['edf_folder']
+    nwb_output_folder = paths['nwb_files_folder']
+    metadata_file = paths['metadata']
 
     edf_files = get_all_edf_files(edf_folder)
 
@@ -201,15 +199,15 @@ def main():
     i, tasks = 0, len(edf_files)
     for file in edf_files:
         print(f"Working on {file.split('/')[-1]}")
-        info, identifier, nwb = load_metadata(file, metadata_file, settings)
+        info, identifier, nwb = load_metadata(file, metadata_file)
         if os.path.isfile(f'{nwb_output_folder}/{identifier}.nwb') or "TAINI_100E_80108_3.9" in file:
             print(f"File {identifier} already exits, continuing..")
             tasks -= 1
             continue  # skip creating nwb if already exists
         nwb = add_subject_info(nwb, info)  # add subject information
-        nwb = add_electrode_info(nwb, info, settings)  # add electrode info
-        nwb, raw, sfreq, all_table_region = add_eeg_data(nwb, file, settings)  # add raw eeg data
-        nwb = add_filtered_eeg(nwb, settings, raw, sfreq, all_table_region)  # add filtered eeg data
+        nwb = add_electrode_info(nwb, info)  # add electrode info
+        nwb, raw, sfreq, all_table_region = add_eeg_data(nwb, file)  # add raw eeg data
+        nwb = add_filtered_eeg(nwb, raw, sfreq, all_table_region)  # add filtered eeg data
         nwb = add_ttl(nwb, raw)  # add ttl to the nwb file (we only have 1 channel for the small social experiments)
 
         print('Saving file...')

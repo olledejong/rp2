@@ -2,13 +2,13 @@
 Adds spatial information about the mouse to the right nwb file
 """
 import os
-import json
 import numpy as np
 import pandas as pd
 import ndx_events
 from pynwb import NWBHDF5IO, TimeSeries
 from pynwb.behavior import SpatialSeries
 
+from settings import paths
 
 def get_coordinate_data(xy_filename):
     """
@@ -94,11 +94,8 @@ def generate_module_components(data):
 
 
 def main():
-    with open('../../settings.json', "r") as f:  # load settings
-        settings = json.load(f)
-
-    nwb_folder = settings['nwb_files_folder']
-    coordinates_folder = settings['coordinate_data_folder']
+    nwb_folder = paths['nwb_files_folder']
+    coordinates_folder = paths['coordinate_data_folder']
 
     # loop over all created NWB files
     nwb_files = os.listdir(nwb_folder)
