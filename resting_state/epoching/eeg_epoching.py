@@ -140,7 +140,7 @@ def get_epochs(good_epochs, epochs_per_chan, genotype, info, se_tps_sample, se_t
     return raw_epochs, filtered_epochs
 
 
-def epoch_eeg_fixed(nwb_file, epoch_length=5.0, ploss_threshold=10):
+def epoch_eeg_fixed(nwb_file, epoch_length=5.0, ploss_threshold=500):
     """
     Creates epochs of a fixed length for EEG data of all channels and omits bad epochs
     based on a package-loss cutoff value (get_package_loss function). Returns both unfiltered
