@@ -11,6 +11,8 @@ import pickle
 import pandas as pd
 import numpy as np
 
+from settings import paths
+
 
 def is_led_on(roi, threshold=245):
     """
@@ -39,16 +41,16 @@ def export_frame(video_name, frame_number, frame, state, images_path):
     cv2.imwrite(save_to, frame)
 
 
-def get_led_states(rois_df, vid_folder_path, snapshot_path):
+def get_led_states(rois_df):
     """
     For every row in the rois_df (holds the movie filename and roi info), the LED
     state is extracted and is stored. All saved info is later saved to a file.
 
     :param rois_df: every row had a filename (mp4/avi) and a ROI
-    :param vid_folder_path: path to where the videos are located
-    :param snapshot_path: path to where snapshots (for validation) are stored
     :return:
     """
+    vid_folder_path = paths["video_folder"]
+    snapshot_path = os.path.join(vid_folder_path, "snapshots")
     all_led_states = {}
 
     for index, row in rois_df.iterrows():
@@ -92,16 +94,16 @@ def get_led_states(rois_df, vid_folder_path, snapshot_path):
     return all_led_states
 
 
-# process starts here
-if __name__ == '__main__':
-    roi_df_path = ""
-    folder_path = ""
-    images_path = ""
-    pickle_path = ""
-
+def main():
+    roi_df_path = os.path.join(paths["video_folder"], "video_rois.xlsx")
+    pickle_path = os.path.join(paths["video_folder"], "pickle")
     roi_df = pd.read_excel(roi_df_path)  # read the roi dataframe created with the identify_led_rois.py script
-    led_states = get_led_states(roi_df, folder_path, images_path)  # get the LED states for all frames of every file
-
+    led_states = get_led_states(roi_df)  # get the LED states for all frames of every file
     # save the LED states for every frame of every video file
     with open(f'{pickle_path}/led_states.pickle', "wb") as f:
         pickle.dump(led_states, f, pickle.HIGHEST_PROTOCOL)
+
+
+# process starts here
+if __name__ == '__main__':
+    main()
