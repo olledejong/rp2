@@ -23,30 +23,43 @@ def score_epoch_clip(input_video, epoch_n, subject_id):
     root = Tk()
     root.withdraw()
 
-    user_input = ''
+    behaviour = ''
     # loop and show clip as long as the user hasn't provided a behaviour label for it
     while True:
         ret, frame = cap.read()
 
-        # if user input provided, break the loop
-        if user_input:
-            break
         # show video clip
-        elif ret:
-            cv2.imshow(f'Subject {subject_id}, epoch {epoch_n}', frame)
-            if cv2.waitKey(25) & 0xFF == 27:  # Press Esc to exit
+        if ret:
+            width = int(frame.shape[1] * 2)
+            height = int(frame.shape[0] * 2)
+            resized_frame = cv2.resize(frame, (width, height))
+
+            cv2.imshow(f'Subject {subject_id}, epoch {epoch_n}', resized_frame)
+            key = cv2.waitKey(50)
+            if key == 27:  # press Esc
+                break
+            elif key == 49:  # press 1 on keyboard
+                behaviour = 'grooming'
+                break
+            elif key == 50:  # press 2 on keyboard
+                behaviour = 'eating'
+                break
+            elif key == 51:  # press 3 on keyboard
+                behaviour = 'sleeping'
+                break
+            elif key == 52:  # press 4 on keyboard
+                behaviour = 'resting'
                 break
         # set position back to frame 0 for when it possibly needs to be played again
         else:
             cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
-            user_input = askstring("Input", "Enter behaviour:")
 
     # lose and destroy windows
     cap.release()
     cv2.destroyAllWindows()
     root.quit()
 
-    return user_input
+    return behaviour
 
 
 def score_epoch_clips(subject_clips, subject_id):
@@ -59,6 +72,7 @@ def score_epoch_clips(subject_clips, subject_id):
 
         # save this clip's behaviour label
         behaviours[epoch_n] = score_epoch_clip(path_to_clip, epoch_n, subject_id)
+        print(behaviours)
 
     # return behaviour for all epochs / clips
     return behaviours
