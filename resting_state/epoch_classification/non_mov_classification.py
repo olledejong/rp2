@@ -12,7 +12,7 @@ from tkinter.simpledialog import askstring
 from settings import paths
 
 
-def label_video(input_video, epoch_n, subject_id):
+def score_epoch_clip(input_video, epoch_n, subject_id):
     cap = cv2.VideoCapture(input_video)  # open the video
 
     if not cap.isOpened():
@@ -49,7 +49,7 @@ def label_video(input_video, epoch_n, subject_id):
     return user_input
 
 
-def get_behaviour(subject_clips, subject_id):
+def score_epoch_clips(subject_clips, subject_id):
     behaviours = {}
 
     # loop through all subject's clips
@@ -58,14 +58,13 @@ def get_behaviour(subject_clips, subject_id):
         epoch_n = path_to_clip.split("_")[-1].split(".")[0]
 
         # save this clip's behaviour label
-        behaviours[epoch_n] = label_video(path_to_clip, epoch_n, subject_id)
+        behaviours[epoch_n] = score_epoch_clip(path_to_clip, epoch_n, subject_id)
 
     # return behaviour for all epochs / clips
     return behaviours
 
 
 def main():
-
     # load some info about the subject
     metadata_df = pd.read_excel(paths["metadata"])
 
@@ -78,7 +77,7 @@ def main():
         subject_clips = [clip for clip in clips if str(subject_id) in clip]
         print(subject_clips)
 
-        behaviours = get_behaviour(subject_clips, subject_id)
+        behaviours = score_epoch_clips(subject_clips, subject_id)
         print(behaviours)
 
 
