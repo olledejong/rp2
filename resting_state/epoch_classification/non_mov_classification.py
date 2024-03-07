@@ -1,7 +1,6 @@
 """
-This file can be used to extract clips from a experiment recording based on the metadata
-of the epoch file that is read. This epoch file namely holds a start and end frame time-point
-for each epoch.
+This file can be used to score clips from experiment recordings that were generated using the
+'generate_epoch_clips.py' script.
 """
 import os
 import cv2
