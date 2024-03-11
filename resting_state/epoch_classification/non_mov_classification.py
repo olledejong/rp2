@@ -6,7 +6,6 @@ import os
 import cv2
 import pandas as pd
 from tkinter import *
-from tkinter.simpledialog import askstring
 
 from settings import paths
 
@@ -62,6 +61,9 @@ def score_epoch_clip(input_video, epoch_n, subject_id):
 
 
 def score_epoch_clips(subject_clips, subject_id):
+    print("To score each clip, press one of the following keys: 1 for grooming, 2 for eating, 3 for sleeping, "
+          "and 4 for resting.")
+
     behaviours = {}
 
     # loop through all subject's clips
@@ -88,7 +90,6 @@ def main():
         # get the filenames of this subject's clips
         clips = os.listdir(os.path.join(paths['video_folder'], 'clips'))
         subject_clips = [clip for clip in clips if str(subject_id) in clip]
-        print(subject_clips)
 
         behaviours = score_epoch_clips(subject_clips, subject_id)
         print(behaviours)
