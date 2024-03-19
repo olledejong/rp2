@@ -8,7 +8,6 @@ import seaborn as sns
 import plotly.graph_objects as go
 import matplotlib.pyplot as plt
 from plotly.subplots import make_subplots
-from scipy.signal import hilbert
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.cluster import KMeans, DBSCAN
 from sklearn.decomposition import PCA
@@ -359,7 +358,6 @@ def main():
 
         # load the epochs of this subject
         subject_id = epochs_filename.split('_')[-1].split('-')[0]
-        if subject_id not in ['39508']: continue
         print(f"Working with subject {subject_id}.")
 
         subject_epochs = mne.read_epochs(os.path.join(paths['epochs_folder'], epochs_filename), preload=True)
