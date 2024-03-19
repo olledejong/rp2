@@ -58,10 +58,10 @@ freq_bands_eeg = {
 }
 
 # dictionary holding the channel names of the EMGs for all subject of which the quality is high enough for analysis
-quality_emgs = {
-    81217: ["EMG_L"], 81175: ["EMG_L", "EMG_R"], 79592: ["EMG_R"], 79593: ["EMG_L"],
-    81207: ["EMG_R"], 80625: ["EMG_R"], 80630: ["EMG_L", "EMG_R"], 78211: ["EMG_R"],
-    39489: ["EMG_L"], 80620: ["EMG_L", "EMG_R"], 78227: ["EMG_L", "EMG_R"], 78233: ["EMG_R"],
-    39508: ["EMG_L", "EMG_R"], 79604: ["EMG_L", "EMG_R"], 81218: ["EMG_L", "EMG_R"],
-    79602: ["EMG_L"], 78244: ["EMG_L", "EMG_R"],  81193: ["EMG_L", "EMG_R"],
+quality_emg = {
+    81217: "EMG_L", 81175: "EMG_R", 79592: "EMG_R", 79593: "EMG_L",
+    81207: "EMG_R", 80625: "EMG_R", 80630: "EMG_R", 78211: "EMG_R",
+    39489: "EMG_L", 80620: "EMG_R", 78227: "EMG_L", 78233: "EMG_R",
+    39508: "EMG_R", 79604: "EMG_L", 81218: "EMG_R", 79602: "EMG_L",
+    78244: "EMG_R", 81193: "EMG_L",
 }
