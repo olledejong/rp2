@@ -1,3 +1,12 @@
+"""
+This file is a script version of the 'identify_rest_epochs' notebook. It clusters the non-movement
+epochs for each subject, creates a figure that gives neat insights into the characteristics of each
+cluster, and saves the cluster annotation to the metadata of the epochs object of the subject.
+
+Then, the researcher can visually inspect the clusters and determine which are sleep, which are active,
+and which are resting-state epochs. Based on this classification, the resting-state cluster can be further
+analyzed by loading the saved epochs object that now includes the cluster annotations.
+"""
 import os
 import mne
 import numpy as np
