@@ -1,26 +1,29 @@
 import os
-import sys
 import mne
-import random
 import numpy as np
 import pandas as pd
 import seaborn as sns
 import plotly.graph_objects as go
-import matplotlib.pyplot as plt
 from plotly.subplots import make_subplots
-from sklearn.preprocessing import StandardScaler, MinMaxScaler
+from sklearn.preprocessing import MinMaxScaler
 from sklearn.cluster import KMeans, DBSCAN
 from sklearn.decomposition import PCA
 from mne.time_frequency import psd_array_multitaper
 
+# imports from other files
 from settings import paths, freq_bands_eeg, freq_bands_emg, quality_emg
-
-from helper_functions import save_figure
 
 palette = sns.color_palette("husl", 3)
 
 
 def calculate_emg_psd_features(signal, sfreq):
+    """
+    Function that derives (PSD) features from the EMG channel of the subject.
+
+    :param signal:
+    :param sfreq:
+    :return:
+    """
     psd, freq = psd_array_multitaper(signal, fmin=0, fmax=100, sfreq=sfreq, n_jobs=-1, verbose=False)
 
     emg_psds = {}  # slice psd data of epoch based on the defined bands
@@ -37,6 +40,13 @@ def calculate_emg_psd_features(signal, sfreq):
 
 
 def calculate_eeg_psd_features(signal, sfreq):
+    """
+    Function that derives (PSD) features from a EEG channel of the subject.
+
+    :param signal:
+    :param sfreq:
+    :return:
+    """
     eeg_psds = {}
     for band, (start, end) in freq_bands_eeg.items():
         psd, freq = psd_array_multitaper(signal, fmin=start, fmax=end, sfreq=sfreq, n_jobs=-1)
@@ -47,77 +57,81 @@ def calculate_eeg_psd_features(signal, sfreq):
     return eeg_psds
 
 
-def save_cluster_plot(plot_df, subject_id):
-    """
-    Save PCA plot where datapoints are colored by K-means cluster.
-
-    :param plot_df:
-    :param subject_id:
-    :return:
-    """
-    fig = plt.figure(figsize=(8, 6))
-    sns.scatterplot(data=plot_df, x=0, y=1, hue="cluster", palette=palette)
-    plt.title(f"Clusters by PCA components, non-movement epochs of subject {subject_id}")
-    plt.xlabel("Principle Component 1")
-    plt.ylabel("Principle Component 2")
-
-    save_figure(os.path.join(paths['plots_folder'], f'ploss_thresh_500/non_mov_clustering/cluster_plots/{subject_id}'))
-
-
-def save_radar_cluster_plot(df_numeric, df_plot, subject_id):
+def save_radar_cluster_plot(features, df_plot, subject_id):
     """
     Save a grid that includes a radar plot for each cluster that describes feature importance.
     Fourth subplot is the cluster scatterplot.
 
-    :param df_numeric:
-    :param subject_id:
-    :param df_plot:
+    :param features: the already min-max scaled features for the epochs of this subject
+    :param subject_id: the subject's id
+    :param df_plot: a df holding the numerical data but also PCA components and cluster label
     :return:
     """
-    scaler_minmax = MinMaxScaler()
-    features = pd.DataFrame(scaler_minmax.fit_transform(df_numeric))
-    features.columns = df_numeric.columns  # copy the column names from the original dataframe
-    features["cluster"] = df_plot["cluster"]  # add cluster labels
-    clusters = np.unique(df_plot["cluster"])  # get amount of clusters
 
-    # determine # of rows and cols for the subplot
-    row_len = int(np.ceil(len(clusters) / 2))
-    col_len = int(np.ceil(len(clusters) / row_len))
-    # generate gridplot with radars
-    fig = make_subplots(
-        rows=row_len, cols=col_len,
-        specs=[[{'type': 'polar'}, {'type': 'polar'}], [{'type': 'polar'}, {'type': 'scatter'}]],
-        horizontal_spacing=0.15, vertical_spacing=0.15,
-        shared_yaxes=True, shared_xaxes=True,
-        subplot_titles=["Cluster 0", "Cluster 1", "Cluster 2", "Clusters by PCA components, non-movement epochs"]
-    )
-
-    # add a subplot to the figure for each cluster
-    max_value, cluster_info = 0, {}
-    for i, cluster in enumerate(clusters):
-        cluster_features = features[features['cluster'] == cluster]
-        cluster_features = cluster_features.iloc[:, :-1]  # remove cluster column
-        average_features = cluster_features.mean(axis=0)  # average the features in this cluster
-
-        # remove non-intuitive radar components and save the info
-        average_features = average_features.drop(['gamma-delta ratio', 'EMG high-low freq ratio'])
-        cluster_info[i] = average_features
-
-        # keep track of the largest value so that all subplots' axis their limit can be set to this value
-        max_value = np.max(average_features) if np.max(average_features) > max_value else max_value
-
-        # add subplot to the figure
-        row, col = (i // 2) + 1, (i % 2) + 1
-        fig.add_trace(go.Scatterpolar(
-            r=average_features,
-            theta=list(average_features.index),
-            fill='toself',
-            name=f'Cluster {i}'
-        ), row=row, col=col)
-
+    clusters = np.unique(df_plot["cluster"])
+    row_len = int(np.ceil(len(clusters) / 2)) + 1
+    col_len = int(np.ceil(len(clusters) / row_len)) + 1
     palette = sns.color_palette("husl", 3).as_hex()
 
-    # add the cluster plot
+    # CREATE PLOTTING GRID USING PLOTLY
+
+    fig = make_subplots(
+        rows=row_len, cols=col_len,
+        specs=[[{'type': 'polar'}, {'type': 'polar'}], [{'type': 'polar'}, {'type': 'scatter'}],
+               [{"colspan": 2}, None]],
+        horizontal_spacing=0.08, vertical_spacing=0.12,
+        shared_yaxes=True, shared_xaxes=True,
+        subplot_titles=["Cluster 0", "Cluster 1", "Cluster 2", "Clusters by PCA components, non-movement epochs",
+                        "Boxplot of (min-max scaled) feature distribution per cluster"]
+    )
+
+    # LOOP THROUGH CLUSTERS AND GENERATE RADAR PLOTS AND BOX-PLOTS
+
+    cluster_info, max_value = {}, 0
+    fig_box = go.Figure()  # for storing boxplot per cluster
+
+    for i, cluster in enumerate(clusters):
+        cluster_features = features[df_plot["cluster"] == cluster]
+        cluster_features = cluster_features.drop(columns=['gamma-delta ratio', 'EMG high-low freq ratio'])
+
+        row, col = (i // 2) + 1, (i % 2) + 1
+
+        average_features = cluster_features.mean(axis=0)
+        cluster_info[i] = average_features
+
+        max_value = np.max(average_features) if np.max(average_features) > max_value else max_value
+
+        fig.add_trace(go.Scatterpolar(
+            r=average_features,
+            theta=average_features.index,
+            fill='toself',
+            name=f'Cluster {i}',
+            showlegend=False
+        ), row=row, col=col)
+
+        # add boxplot trace for this cluster as well
+        cluster_features = cluster_features.drop(
+            columns=['EMG band3', 'EMG band4', 'EMG band5', 'EMG band6', 'EMG band7', 'EMG band8'])
+        repeated_arrays = [np.repeat(feature, len(cluster_features)) for feature in cluster_features.columns]
+        x = np.concatenate(repeated_arrays)
+        y = cluster_features.T.stack().values
+
+        # per add_trace alle data van 1 cluster en splits het dmv de x op features
+        fig_box.add_trace(go.Violin(
+            y=y,
+            x=x,
+            name=f'Cluster {cluster}',
+            marker_color=palette[cluster],
+            showlegend=True
+        ))
+
+    fig_box.update_traces(box_visible=True, meanline_visible=True)
+    # add the boxplot to the grid plot
+    for trace in fig_box.data:
+        fig.add_trace(trace, row=3, col=1)
+
+    # ADD CLUSTER PLOT TO ROW 2 COL 2 OF GRID
+
     fig.add_trace(go.Scatter(
         x=df_plot[0], y=df_plot[1], mode="markers",
         marker=dict(color=df_plot["cluster"], colorscale=palette),
@@ -126,108 +140,69 @@ def save_radar_cluster_plot(df_numeric, df_plot, subject_id):
     fig.update_xaxes(title_text="Principle Component 1", row=2, col=2)
     fig.update_yaxes(title_text="Principle Component 2", row=2, col=2)
 
-    # complete figure
+    # COMPLETE FIGURE
     fig.update_layout(
-        height=360 * row_len, width=500 * col_len,
-        margin=dict(l=50, r=50, t=50, b=50),
+        height=400*row_len, width=620*col_len,
+        margin=dict(l=50, r=50, t=70, b=70),
+        colorway=palette,
         showlegend=True,
-        colorway=palette
+        violinmode='group',
+        violingap=0.3,
+        violingroupgap=0.1
     )
     fig.update_annotations(yshift=20)
     fig.update_polars(radialaxis=dict(range=[0, max_value + .05]))
-    fig.write_image(os.path.join(paths['plots_folder'], f'ploss_thresh_500/non_mov_clustering/radar_cluster_plot/{subject_id}.png'))
+    fig.write_image(
+        os.path.join(paths['plots_folder'], f'ploss_thresh_500/non_mov_clustering/{subject_id}.png'))
 
     return cluster_info
 
 
-def save_average_signal_grid_plot(df_plot, subject_id, subject_epochs, wanted_eeg_chan, wanted_emg_chan):
-    unique_clusters = df_plot["cluster"].unique()
-    fig, axes = plt.subplots(
-        ncols=2, nrows=len(unique_clusters),
-        figsize=(20, 3 * len(unique_clusters)),
-        sharex=True, sharey=True
-    )
-    axes = axes.ravel()
-
-    i = 0
-    for cluster in np.sort(unique_clusters):
-        # get the cluster data from the dataframe
-        cluster_data = df_plot[df_plot["cluster"] == cluster]
-
-        for chan in [wanted_eeg_chan, wanted_emg_chan]:
-            # get epoch indexes
-            epoch_indexes = cluster_data["epoch_n"].unique()
-            # get correct epoch data
-            epoch_data = subject_epochs[epoch_indexes].get_data(picks=chan)
-            # average the epochs of this channel and cluster
-            mean = np.mean(epoch_data, axis=0)[0]
-
-            colors = {0: palette[1], 1: palette[2], 2: palette[0]}
-
-            axes[i].plot(mean, color=colors[cluster])
-            axes[i].set_title(f"Cluster {cluster}, channel: {chan}")
-            i += 1
-
-    plt.tight_layout()
-    save_figure(os.path.join(paths['plots_folder'], f'ploss_thresh_500/non_mov_clustering/average_emg_signals/{subject_id}'))
-
-
-def perform_pca(df_numeric):
+def remove_cluster_outliers(df_numeric, df_plot):
     """
-    Performs PCA and clustering using this subject's numerical dataframe
+    Removes outliers from the epoch feature data based on DBSCAN clustering. Only
+    takes place when there are more than 400 epochs for the subject.
 
-    :param df_numeric: the numerical features,
+    :param df_numeric:
+    :param df_plot:
     :return:
     """
-    scaler = StandardScaler()
-    scaled_features = scaler.fit_transform(df_numeric)
-    pca = PCA(n_components=2)
-    comp = pca.fit_transform(scaled_features)
+    # hard-coded cutoff for animals that already have a relatively low amount of epochs
+    if df_numeric.shape[0] < 400:
+        return df_numeric, df_plot
 
-    return comp
+    dbscan = DBSCAN(eps=2.4, min_samples=35)
+    outlier_preds = dbscan.fit_predict(df_numeric)
 
+    df_plot['outlier'] = outlier_preds
+    print("Number of outliers: ", len(outlier_preds[outlier_preds == -1]))
 
-def remove_cluster_outliers(df_numeric, df_plot, subject_id):
-    dbscan = DBSCAN(eps=2.5, min_samples=25)
-    clusters = dbscan.fit_predict(df_numeric)
-    df_plot['clusters_db'] = clusters
-
-    # show anomalies
-    fig = plt.figure(figsize=(8, 6))
-    sns.scatterplot(data=df_plot, x=0, y=1, hue="clusters_db")
-    plt.title("Clusters by PCA components, non-movement epochs")
-    plt.xlabel("Principle Component 1")
-    plt.ylabel("Principle Component 2")
-    save_figure(os.path.join(paths['plots_folder'], f'ploss_thresh_500/non_mov_clustering/removed_outliers/{subject_id}'))
-
-    # remove outliers and return
-    df_numeric_wo_outliers, df_plot_wo_anomalies = (df_numeric[~df_plot['clusters_db'].isin([-1])],
-                                                    df_plot[~df_plot['clusters_db'].isin([-1])])
-    print(f"Removed {df_numeric.shape[0] - df_numeric_wo_outliers.shape[0]} epochs from the data")
+    # remove outliers
+    df_numeric_wo_outliers = df_numeric[~df_plot['outlier'].isin([-1])]
+    df_plot_wo_anomalies = df_plot[~df_plot['outlier'].isin([-1])]
 
     return df_numeric_wo_outliers, df_plot_wo_anomalies
 
 
-def engineer_features(non_mov_epochs, subject_id, sfreq, wanted_chans):
+def engineer_features(non_mov_epochs, wanted_chans):
     """
     Engineers desired features for the given subject. If there are two quality EMG channels,
     then the features derived from both EMG channels are averaged.
 
     :param non_mov_epochs: the subject's epochs
-    :param subject_id: the id of the subject
-    :param sfreq: sampling frequency of the EEG
     :param wanted_chans: indexes used to retrieve right epoch data (one EEG channel, and one EMG channels)
     :return:
     """
     print(f'Engineering features..')
 
+    sfreq = non_mov_epochs.info['sfreq']
     all_features = []  # list holding dict with all features per epoch
 
     # loop through the epochs in the subject's epochs
     for i, epoch in enumerate(non_mov_epochs):
         # features per epoch are stored in here
         features = {
-            'subject_id': subject_id,
+            'subject_id': non_mov_epochs.metadata['animal_id'].iloc[0],
             'epoch_n': non_mov_epochs.metadata.iloc[i].name,
             'movement': non_mov_epochs.metadata["movement"].iloc[i],
             'frame_start_end': non_mov_epochs.metadata["epochs_start_end_frames"].iloc[i]
@@ -244,7 +219,6 @@ def engineer_features(non_mov_epochs, subject_id, sfreq, wanted_chans):
 
             # if the looped channel type we need to calc features for is EMG, then we end up here
             if chan_type == 'EMG':
-
                 # if there's only one EMG channel, save its features
                 channel_data = epoch[chan_index, :]
                 features.update(calculate_emg_psd_features(channel_data, sfreq))
@@ -295,20 +269,6 @@ def get_wanted_channels(subject_epochs, wanted_eeg_chan, wanted_emg_chan):
     return wanted_chan_indexes
 
 
-def perform_clustering(df_numeric):
-    """
-    Performs clustering and forces 3 clusters. In theory, active, sleep and resting states.
-
-    :param df_numeric:
-    :return:
-    """
-    scaler = StandardScaler()
-    scaled_features = scaler.fit_transform(df_numeric)
-    kmeans = KMeans(random_state=40, n_clusters=3)
-    kmeans.fit(scaled_features)
-    return kmeans
-
-
 def classify_and_save_epochs(subject_epochs, subject_id):
     """
     Generates the desired features for this subject. Each epoch for this subject is assigned
@@ -325,26 +285,32 @@ def classify_and_save_epochs(subject_epochs, subject_id):
     # engineer features
     non_mov_epochs = subject_epochs[subject_epochs.metadata["movement"] == 0]
     print(f'Total epochs: {len(subject_epochs)}, of which {len(non_mov_epochs)} are non-movement.')
-    features = engineer_features(non_mov_epochs, subject_id, subject_epochs.info['sfreq'], wanted_chan_indexes)
+    features = engineer_features(non_mov_epochs, wanted_chan_indexes)
 
     # get the numerical features from the created features dataframe (i.e. get rid of the epoch # etc.)
     df_numeric = features.iloc[:, 4:]
-    comp = perform_pca(df_numeric)
+
+    # scale the features
+    scaler = MinMaxScaler().set_output(transform="pandas")
+    scaled_features = scaler.fit_transform(df_numeric)
+
+    # perform principal component analysis
+    pca = PCA(n_components=2)
+    comp = pca.fit_transform(scaled_features)
 
     # save reduced dimensions and remove outliers
     df_plot = pd.concat([features.reset_index(drop=True), pd.DataFrame(comp)], axis=1)
-    df_numeric, df_plot = remove_cluster_outliers(df_numeric, df_plot, subject_id)  # remove outliers using DBSCAN
+    df_numeric, df_plot = remove_cluster_outliers(df_numeric, df_plot)  # remove outliers using DBSCAN
+    scaled_features = scaler.fit_transform(df_numeric)  # rescale as we might have removed some epochs
 
     # perform clustering and add cluster labels to df_plot
-    kmeans = perform_clustering(df_numeric)
+    kmeans = KMeans(random_state=40, n_clusters=3)
+    kmeans.fit(scaled_features)
     df_plot["cluster"] = kmeans.labels_
-
     print(f'There are 3 clusters with sizes: {np.unique(kmeans.labels_, return_counts=True)[1]}')
 
-    # save cluster and radar plots for this subject
-    save_cluster_plot(df_plot, subject_id)
-    save_average_signal_grid_plot(df_plot, subject_id, subject_epochs, wanted_eeg_chan, wanted_emg_chan)
-    cluster_info = save_radar_cluster_plot(df_numeric, df_plot, subject_id)
+    # save the grid plot that visualizes the characteristics of each cluster for this subject
+    cluster_info = save_radar_cluster_plot(scaled_features, df_plot, subject_id)
     report_classification(cluster_info)
 
     # todo add cluster labels to the epochs object and save
