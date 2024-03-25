@@ -317,7 +317,6 @@ def main():
         subject_id = epochs_filename.split('_')[-1].split('-')[0]
 
         # for now, skipping the subjects that are of bad quality or seem to need clustering using 4 clusters
-        if subject_id in ['79592', '78233', '78244', '78211', '81193', '81218']: continue
         print(f"Working with subject {subject_id}.")
 
         subject_epochs = mne.read_epochs(os.path.join(paths['epochs_folder'], epochs_filename), preload=True)
