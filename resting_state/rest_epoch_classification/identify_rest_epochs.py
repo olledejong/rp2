@@ -76,7 +76,6 @@ def save_radar_cluster_plot(features, df_plot, subject_id):
     :param df_plot: a df holding the numerical data but also PCA components and cluster label
     :return:
     """
-
     clusters = np.unique(df_plot["cluster"])
     row_len = int(np.ceil(len(clusters) / 2)) + 1
     col_len = int(np.ceil(len(clusters) / row_len)) + 1
@@ -96,7 +95,7 @@ def save_radar_cluster_plot(features, df_plot, subject_id):
 
     # LOOP THROUGH CLUSTERS AND GENERATE RADAR PLOTS AND BOX-PLOTS
 
-    cluster_info, max_value = {}, 0
+    max_value = 0
     fig_box = go.Figure()  # for storing boxplot per cluster
 
     for i, cluster in enumerate(clusters):
@@ -106,7 +105,6 @@ def save_radar_cluster_plot(features, df_plot, subject_id):
         row, col = (i // 2) + 1, (i % 2) + 1
 
         average_features = cluster_features.mean(axis=0)
-        cluster_info[i] = average_features
 
         max_value = np.max(average_features) if np.max(average_features) > max_value else max_value
 
@@ -164,10 +162,8 @@ def save_radar_cluster_plot(features, df_plot, subject_id):
     fig.write_image(
         os.path.join(paths['plots_folder'], f'ploss_thresh_500/non_mov_clustering/{subject_id}.png'))
 
-    return cluster_info
 
-
-def remove_cluster_outliers(df_numeric, df_plot):
+def tag_outliers(df_numeric, df_plot):
     """
     Removes outliers from the epoch feature data based on DBSCAN clustering. Only
     takes place when there are more than 400 epochs for the subject.
@@ -178,19 +174,16 @@ def remove_cluster_outliers(df_numeric, df_plot):
     """
     # hard-coded cutoff for animals that already have a relatively low amount of epochs
     if df_numeric.shape[0] < 400:
-        return df_numeric, df_plot
+        df_plot['cluster'] = np.ones(df_numeric.shape[0])
+        return df_plot
 
     dbscan = DBSCAN(eps=2.4, min_samples=35)
     outlier_preds = dbscan.fit_predict(df_numeric)
 
-    df_plot['outlier'] = outlier_preds
+    df_plot['cluster'] = outlier_preds
     print("Number of outliers: ", len(outlier_preds[outlier_preds == -1]))
 
-    # remove outliers
-    df_numeric_wo_outliers = df_numeric[~df_plot['outlier'].isin([-1])]
-    df_plot_wo_anomalies = df_plot[~df_plot['outlier'].isin([-1])]
-
-    return df_numeric_wo_outliers, df_plot_wo_anomalies
+    return df_plot
 
 
 def engineer_features(non_mov_epochs, wanted_chans):
@@ -238,26 +231,6 @@ def engineer_features(non_mov_epochs, wanted_chans):
     print(f'Done engineering features.')
 
     return pd.DataFrame(all_features)
-
-
-def report_classification(cluster_info):
-    average_emgs = {}
-    cluster_gammas = {}
-    for cluster_n, info in cluster_info.items():
-        average_emgs[cluster_n] = np.mean(info[5:])
-        cluster_gammas[cluster_n] = info['OFC_L $\gamma$']
-
-    highest_av_emg_cluster = max(average_emgs, key=average_emgs.get)
-    highest_gamma_cluster = max(cluster_gammas, key=cluster_gammas.get)
-
-    for cluster_n, info in cluster_info.items():
-        if (cluster_n == highest_av_emg_cluster) & (cluster_n == highest_gamma_cluster):
-            print(f'Cluster {highest_av_emg_cluster} is likely active')
-        elif (info['OFC_L $\gamma$'] < info['OFC_L $\delta$']) & (
-                (info['EMG band10'] + info['EMG band9']) < (info['EMG band1'] + info['EMG band2'])):
-            print(f'Cluster {cluster_n} is likely sleep')
-        else:
-            print(f'Cluster {cluster_n} is likely resting (or something else)')
 
 
 def get_wanted_channels(subject_epochs, wanted_eeg_chan, wanted_emg_chan):
@@ -309,20 +282,26 @@ def classify_and_save_epochs(subject_epochs, subject_id):
 
     # save reduced dimensions and remove outliers
     df_plot = pd.concat([features.reset_index(drop=True), pd.DataFrame(comp)], axis=1)
-    df_numeric, df_plot = remove_cluster_outliers(df_numeric, df_plot)  # remove outliers using DBSCAN
-    scaled_features = scaler.fit_transform(df_numeric)  # rescale as we might have removed some epochs
+    df_plot = tag_outliers(df_numeric, df_plot)  # remove outliers using DBSCAN
+    df_numeric_wo_outliers = df_numeric[~df_plot['cluster'].isin([-1])]  # df to be rescaled
+    scaled_features = scaler.fit_transform(df_numeric_wo_outliers)  # rescale non-outlier epoch features
 
-    # perform clustering and add cluster labels to df_plot
+    # perform clustering
     kmeans = KMeans(random_state=40, n_clusters=3)
     kmeans.fit(scaled_features)
-    df_plot["cluster"] = kmeans.labels_
     print(f'There are 3 clusters with sizes: {np.unique(kmeans.labels_, return_counts=True)[1]}')
 
-    # save the grid plot that visualizes the characteristics of each cluster for this subject
-    cluster_info = save_radar_cluster_plot(scaled_features, df_plot, subject_id)
-    report_classification(cluster_info)
+    # add cluster labels to df_plot
+    outlier_indexes = df_plot.index.difference(df_numeric_wo_outliers.index)
+    non_outlier_indexes = df_plot.index.difference(outlier_indexes)
+    df_plot.loc[non_outlier_indexes, 'cluster'] = kmeans.labels_  # add the cluster labels to the non_outlier indexes
 
-    # todo add cluster labels to the epochs object and save
+    # save the grid plot that visualizes the characteristics of each cluster for this subject
+    save_radar_cluster_plot(scaled_features, df_plot[df_plot['cluster'] != -1], subject_id)
+
+    # save the epochs for this subject with their cluster annotation in the metadata
+    non_mov_epochs.metadata["cluster"] = df_plot['cluster']
+    non_mov_epochs.save(os.path.join(paths['epochs_folder'], f"filtered_epochs_w_clusters_{subject_id}-epo.fif"))
 
 
 def main():
@@ -333,6 +312,9 @@ def main():
 
         # load the epochs of this subject
         subject_id = epochs_filename.split('_')[-1].split('-')[0]
+
+        # for now, skipping the subjects that are of bad quality or seem to need clustering using 4 clusters
+        if subject_id in ['78233', '78244', '78211', '81193', '81218']: continue
         print(f"Working with subject {subject_id}.")
 
         subject_epochs = mne.read_epochs(os.path.join(paths['epochs_folder'], epochs_filename), preload=True)
