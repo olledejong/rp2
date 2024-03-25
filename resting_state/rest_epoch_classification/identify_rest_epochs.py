@@ -174,7 +174,7 @@ def tag_outliers(df_numeric, df_plot):
     """
     # hard-coded cutoff for animals that already have a relatively low amount of epochs
     if df_numeric.shape[0] < 400:
-        df_plot['cluster'] = np.ones(df_numeric.shape[0])
+        df_plot['cluster'] = np.ones(len(df_numeric), dtype=int)
         return df_plot
 
     dbscan = DBSCAN(eps=2.4, min_samples=35)
@@ -317,7 +317,7 @@ def main():
         subject_id = epochs_filename.split('_')[-1].split('-')[0]
 
         # for now, skipping the subjects that are of bad quality or seem to need clustering using 4 clusters
-        if subject_id in ['78233', '78244', '78211', '81193', '81218']: continue
+        if subject_id in ['79592', '78233', '78244', '78211', '81193', '81218']: continue
         print(f"Working with subject {subject_id}.")
 
         subject_epochs = mne.read_epochs(os.path.join(paths['epochs_folder'], epochs_filename), preload=True)
