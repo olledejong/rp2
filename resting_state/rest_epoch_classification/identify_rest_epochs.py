@@ -215,7 +215,6 @@ def engineer_features(non_mov_epochs, wanted_chans):
             if chan_type == 'EEG':
                 # we only wish to calc PSD features using one chan, so get first index and then the data
                 eeg_chan_data = epoch[chan_index, :]
-
                 # get eeg psd features with right data from epoch
                 features.update(calculate_eeg_psd_features(eeg_chan_data, sfreq))
 
@@ -299,9 +298,13 @@ def classify_and_save_epochs(subject_epochs, subject_id):
     # save the grid plot that visualizes the characteristics of each cluster for this subject
     save_radar_cluster_plot(scaled_features, df_plot[df_plot['cluster'] != -1], subject_id)
 
-    # save the epochs for this subject with their cluster annotation in the metadata
-    non_mov_epochs.metadata["cluster"] = df_plot['cluster']
-    non_mov_epochs.save(os.path.join(paths['epochs_folder'], f"filtered_epochs_w_clusters_{subject_id}-epo.fif"))
+    # store the cluster column of df_plot as a numpy array in the metadata of the subject's epoch object and
+    # save it to the filesystem such that it can be analyzed later
+    non_mov_epochs.metadata["cluster"] = np.array(df_plot['cluster'])
+    non_mov_epochs.save(
+        os.path.join(paths['epochs_folder'], f"filtered_epochs_w_clusters_{subject_id}-epo.fif"),
+        overwrite=True
+    )
 
 
 def main():
