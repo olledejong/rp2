@@ -78,7 +78,7 @@ def main():
     # load some info about the subject
     metadata_df = pd.read_excel(paths["metadata"])
 
-    for i, subject_id in enumerate(metadata_df['mouseId']):  # TODO change back
+    for i, subject_id in enumerate(metadata_df['mouseId']):
         subject_meta = metadata_df[metadata_df['mouseId'] == int(subject_id)]
         print('Mouse name:', subject_meta['mouseName'].iloc[0])
 
