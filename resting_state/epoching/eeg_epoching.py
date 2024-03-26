@@ -27,17 +27,17 @@ def get_subject_metadata(metadata_path, subject_id):
     return metadata_df[metadata_df['mouseId'] == subject_id]
 
 
-def get_led_onset_data(video_folder, movie_filename):
+def get_led_onset_data(video_analysis_output_dir, movie_filename):
     """
     Loads the correct LED onset data from the pickle file which holds the LED
     onset data for all experiment videos.
 
-    :param video_folder:
+    :param video_analysis_output_dir:
     :param movie_filename:
     :return:
     """
     print(f"Retrieving accompanying LED state data from file {movie_filename}")
-    with open(f'{video_folder}/pickle/led_states_all_videos.pickle', "rb") as f:
+    with open(f'{video_analysis_output_dir}/pickle/led_states_all_videos.pickle', "rb") as f:
         led_states = pickle.load(f)
         led_states = led_states[movie_filename]
         return led_states
@@ -69,7 +69,7 @@ def adjust_fps_get_offset(eeg_signal, subject_id, eeg_onsets, s_freq):
     :param s_freq:
     :return: the adjusted framerate
     """
-    metadata_path, video_folder = paths["metadata"], paths["video_folder"]
+    metadata_path, video_analysis_output_dir = paths["metadata"], paths["video_analysis_output"]
 
     # get the subject's metadata from the file (holds video filename that points to right LED states)
     subject_metadata = get_subject_metadata(metadata_path, int(subject_id))
@@ -77,7 +77,7 @@ def adjust_fps_get_offset(eeg_signal, subject_id, eeg_onsets, s_freq):
 
     # get the LED states for this subject (i.e. get the LED states of the correct video)
     # and then get the frames where the LED turned ON (i.e. get all boolean event changes from OFF to ON (0 to 1)
-    led_onsets = get_led_onset_data(video_folder, movie_filename)
+    led_onsets = get_led_onset_data(video_analysis_output_dir, movie_filename)
     led_onsets = np.where(np.logical_and(np.diff(led_onsets), led_onsets[1:]))[0] + 1
 
     # Find length of eeg signal between the two pulse combination. For example first and last

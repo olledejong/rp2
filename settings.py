@@ -8,15 +8,16 @@ general = {
 }
 
 paths = {
- "edf_folder": "",
- "coordinate_data_folder": "",
- "nwb_files_folder": "",
- "plots_folder": "",
- "epochs_folder": "",
- "subject_metadata": "",
- "metadata": "",
- "psd_data_folder": "",
- "video_folder": ""
+    "edf_folder": "",
+    "coordinate_data_folder": "",
+    "nwb_files_folder": "",
+    "plots_folder": "",
+    "epochs_folder": "",
+    "subject_metadata": "",
+    "metadata": "",
+    "psd_data_folder": "",
+    "recordings_folder": "",
+    "video_analysis_output": ""
 }
 
 # variables used for raw EEG filtering while creating Neurodata Without Border (NWB) files (one of the first steps)
@@ -64,4 +65,25 @@ quality_emg = {
     39489: "EMG_L", 80620: "EMG_R", 78227: "EMG_L", 78233: "EMG_R",
     39508: "EMG_R", 79604: "EMG_L", 81218: "EMG_R", 79602: "EMG_L",
     78244: "EMG_R", 81193: "EMG_L",
+}
+
+# bad_clustering_subjects = [78233, 78244]
+
+cluster_annotations = {
+    39489: {'rest': 2, 'sleep': 0, 'active': 1},
+    39508: {'rest': 2, 'sleep': 0, 'active': 1},
+    78211: {'rest': 3, 'sleep': [0, 2], 'active': 1},
+    78227: {'rest': 0, 'sleep': 2, 'active': 1},
+    79592: {'rest': 0, 'sleep': 1, 'active': 2},
+    79593: {'rest': 2, 'sleep': 1, 'active': 0},
+    79602: {'rest': 2, 'sleep': 0, 'active': 1},
+    79604: {'rest': 0, 'sleep': 2, 'active': 1},
+    80620: {'rest': 0, 'sleep': 2, 'active': 1},
+    80625: {'rest': 2, 'sleep': 1, 'active': 0},
+    80630: {'rest': 2, 'sleep': 1, 'active': 0},
+    81175: {'rest': 0, 'sleep': 2, 'active': 1},
+    81193: {'rest': 3, 'sleep': [1, 2], 'active': 0},
+    81207: {'rest': 0, 'sleep': 2, 'active': 1},
+    81217: {'rest': 1, 'sleep': 2, 'active': 0},
+    81218: {'rest': 3, 'sleep': 0, 'active': [1, 2]},
 }

@@ -68,7 +68,7 @@ def score_epoch_clips(subject_clips, subject_id):
 
     # loop through all subject's clips
     for clip_filename in subject_clips:
-        path_to_clip = os.path.join(paths['video_folder'], 'clips', clip_filename)
+        path_to_clip = os.path.join(paths['video_analysis_output'], 'clips', clip_filename)
         epoch_n = path_to_clip.split("_")[-1].split(".")[0]
 
         # save this clip's behaviour label
@@ -88,7 +88,7 @@ def main():
         subject_meta = metadata_df[metadata_df['mouseId'] == int(subject_id)]
 
         # get the filenames of this subject's clips
-        clips = os.listdir(os.path.join(paths['video_folder'], 'clips'))
+        clips = os.listdir(os.path.join(paths['video_analysis_output'], 'clips'))
         subject_clips = [clip for clip in clips if str(subject_id) in clip]
 
         behaviours = score_epoch_clips(subject_clips, subject_id)
