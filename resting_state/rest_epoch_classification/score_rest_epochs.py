@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 from tkinter import *
 
-from settings import paths, cluster_annotations
+from settings import paths, cluster_annotations, omitted_after_clustering, omitted_other
 
 
 def score_epoch_clip(input_video, epoch_n, subject_id):
@@ -43,7 +43,10 @@ def score_epoch_clip(input_video, epoch_n, subject_id):
                     behaviour = 'resting'
                     break
                 elif key == 50:  # press 2 on keyboard
-                    behaviour = 'non-resting'
+                    behaviour = 'sleeping'
+                    break
+                elif key == 51:  # press 3 on keyboard
+                    behaviour = 'other'
                     break
         # set position back to frame 0 for when it possibly needs to be played again
         else:
@@ -58,7 +61,7 @@ def score_epoch_clip(input_video, epoch_n, subject_id):
 
 
 def score_epoch_clips(subject_clips, subject_id):
-    print("To score each clip, press one of the following keys: 1 for sleeping, 2 for resting, and 3 for other.")
+    print("To score each clip, press one of the following keys: 1 for resting, and 2 for sleeping, and 3 for other.")
 
     behaviours = []
 
@@ -75,25 +78,59 @@ def score_epoch_clips(subject_clips, subject_id):
 
 
 def main():
-    # load some info about the subject
     metadata_df = pd.read_excel(paths["metadata"])
 
     for i, subject_id in enumerate(metadata_df['mouseId']):
+
+        # PERFORM SANITY CHECKS #
+
+        if subject_id in omitted_other:
+            print(f'Subject {subject_id} was omitted for some reason, proceeding..')
+            continue
+
+        if subject_id in omitted_after_clustering:
+            print(f'Subject {subject_id} was omitted because clustering results were inconclusive/of bad quality, '
+                  f'proceeding..')
+            continue
+
+        annotated_epoch_files = os.listdir(paths['epochs_folder'])
+        if any(str(subject_id) in file for file in annotated_epoch_files if file.startswith('resting_epochs_man')):
+            print(f'Clips for subject {subject_id} have already been scored, proceeding..')
+            continue
+
+        # GET THE CLIP FILENAMES FOR THIS SUBJECT #
+
         subject_meta = metadata_df[metadata_df['mouseId'] == int(subject_id)]
-        print('Mouse name:', subject_meta['mouseName'].iloc[0])
+        print(f'Subject id: {subject_id}, Mouse name: {subject_meta["mouseName"].iloc[0]}')
 
         # get the filenames of this subject's clips
         clips = os.listdir(os.path.join(paths['video_analysis_output'], 'clips'))
         subject_clips = [clip for clip in clips if str(subject_id) in clip]
+        # make sure the clips are sorted such that they align with the epochs in the epoch object/metadata
+        subject_clips = sorted(subject_clips, key=lambda x: int(x.split("_")[-1].split(".")[0]))
 
-        man_annotations = score_epoch_clips(subject_clips, subject_id)
+        # LOAD THE EPOCHS FOR THIS SUBJECT #
 
-        # load the subject epochs
         epochs = mne.read_epochs(
             os.path.join(paths['epochs_folder'], f"filtered_epochs_w_clusters_{subject_id}-epo.fif"),
             preload=True
         )
+        # get the resting-state cluster epochs
         resting_epochs = epochs[epochs.metadata["cluster"] == cluster_annotations[subject_id]['rest']]
+        print(f'There are {len(resting_epochs)} resting-state epochs to be scored for this subject')
+
+        # remove epochs from epoch object if there's no clip for them (epoch was skipped while creating the clips)
+        if len(resting_epochs) != len(subject_clips):
+            clips_epoch_n = [int(clip.split('_')[-1].split('.')[0]) for clip in clips if str(subject_id) in clip]
+            missing_clips = np.setdiff1d(np.array(resting_epochs.metadata.index), np.array(clips_epoch_n))
+            row_numbers = resting_epochs.metadata.index.get_indexer(missing_clips)
+            resting_epochs = [epoch for i, epoch in enumerate(resting_epochs) if i not in row_numbers]
+            print(f'Removed {len(missing_clips)} epoch(s) because there was no clip. Current # epochs: {len(resting_epochs)}')
+
+        # SCORE THE CLIPS AND STORE THE ANNOTATIONS IN THE METADATA OF THE EPOCHS #
+
+        man_annotations = score_epoch_clips(subject_clips, subject_id)
+
         resting_epochs.metadata['behaviour'] = man_annotations
 
         # save resting-state epochs with manual annotations
