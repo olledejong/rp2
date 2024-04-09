@@ -67,23 +67,38 @@ quality_emg = {
     78244: "EMG_R", 81193: "EMG_L",
 }
 
-# bad_clustering_subjects = [78233, 78244]
+# after inspecting the power traces of all subjects, these channels were noted as having bad quality
+low_qual_chans = {
+    "80630": ["OFC_R"],
+    "39489": ["OFC_R"],
+    "80625": ["OFC_L"],
+    "81193": ["OFC_R", "OFC_L"]
+}
 
+# list of animal ids that are excluded from the resting-state analysis
+omitted_other = [80108]  # way to high sampling frequency
+
+# this dictionary holds the labels that belong to the cluster names (0, 1, 2) for each subject
+# these were determined by visually inspecting the clustering output of the 'identify_rest_epochs' script
 cluster_annotations = {
-    39489: {'rest': 2, 'sleep': 0, 'active': 1},
-    39508: {'rest': 2, 'sleep': 0, 'active': 1},
-    78211: {'rest': 3, 'sleep': [0, 2], 'active': 1},
-    78227: {'rest': 0, 'sleep': 2, 'active': 1},
-    79592: {'rest': 0, 'sleep': 1, 'active': 2},
-    79593: {'rest': 2, 'sleep': 1, 'active': 0},
-    79602: {'rest': 2, 'sleep': 0, 'active': 1},
-    79604: {'rest': 0, 'sleep': 2, 'active': 1},
-    80620: {'rest': 0, 'sleep': 2, 'active': 1},
-    80625: {'rest': 2, 'sleep': 1, 'active': 0},
+    39489: {'rest': 2, 'sleep': 1, 'active': 0},
+    39508: {'rest': 1, 'sleep': 0, 'active': 2},
+    78211: {'rest': 0, 'sleep': 1, 'active': 2},
+    78227: {'rest': 1, 'sleep': 0, 'active': 2},
+    79592: {'rest': 1, 'sleep': 2, 'active': 0},
+    79593: {'rest': 0, 'sleep': 2, 'active': 1},
+    79602: {'rest': 0, 'sleep': 2, 'active': 1},
+    79604: {'rest': 1, 'sleep': 2, 'active': 0},
+    80620: {'rest': 0, 'sleep': 1, 'active': 2},
+    80625: {'rest': 2, 'sleep': 0, 'active': 1},
     80630: {'rest': 2, 'sleep': 1, 'active': 0},
     81175: {'rest': 0, 'sleep': 2, 'active': 1},
-    81193: {'rest': 3, 'sleep': [1, 2], 'active': 0},
-    81207: {'rest': 0, 'sleep': 2, 'active': 1},
+    81193: {'rest': 2, 'sleep': 0, 'active': 1},
+    81207: {'rest': 2, 'sleep': 0, 'active': 1},
     81217: {'rest': 1, 'sleep': 2, 'active': 0},
-    81218: {'rest': 3, 'sleep': 0, 'active': [1, 2]},
+    81218: {'rest': 1, 'sleep': 2, 'active': 0},
 }
+
+# for two animals the clustering results were inconclusive, interestingly both from batch 1
+# they are omitted from power/connectivity/other downstream analysis
+omitted_after_clustering = [78233, 78244]
