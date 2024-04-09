@@ -69,10 +69,9 @@ quality_emg = {
 
 # after inspecting the power traces of all subjects, these channels were noted as having bad quality
 low_qual_chans = {
-    "80630": ["OFC_R"],
-    "39489": ["OFC_R"],
-    "80625": ["OFC_L"],
-    "81193": ["OFC_R", "OFC_L"]
+    39489: ["OFC_R"],
+    80625: ["OFC_L"],
+    81193: ["OFC_R", "OFC_L"]
 }
 
 # list of animal ids that are excluded from the resting-state analysis
