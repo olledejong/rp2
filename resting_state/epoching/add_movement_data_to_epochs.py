@@ -10,7 +10,7 @@ import ndx_events
 import numpy as np
 from pynwb import NWBHDF5IO
 
-from settings import paths
+from settings import paths_resting_state
 
 
 def get_epoch_array(subject_id, epochs_folder):
@@ -60,7 +60,7 @@ def main():
     :return:
     """
     resting_cutoff = 0  # number of frames of movement that is allowed in one epoch
-    nwb_folder, epochs_folder = paths["nwb_files_folder"], paths["epochs_folder"]
+    nwb_folder, epochs_folder = paths_resting_state["nwb_files_folder"], paths_resting_state["epochs_folder"]
 
     all_epochs = []
     # loop through the nwb files (1 for each subject)

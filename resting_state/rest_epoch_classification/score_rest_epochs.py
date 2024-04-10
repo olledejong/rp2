@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 from tkinter import *
 
-from settings import paths, cluster_annotations, omitted_after_clustering, omitted_other
+from settings import paths_resting_state, cluster_annotations, omitted_after_clustering, omitted_other
 
 
 def score_epoch_clip(input_video, epoch_n, subject_id):
@@ -67,7 +67,7 @@ def score_epoch_clips(subject_clips, subject_id):
 
     # loop through all subject's clips
     for clip_filename in subject_clips:
-        path_to_clip = os.path.join(paths['video_analysis_output'], 'clips', clip_filename)
+        path_to_clip = os.path.join(paths_resting_state['video_analysis_output'], 'clips', clip_filename)
         epoch_n = path_to_clip.split("_")[-1].split(".")[0]
 
         # save this clip's behaviour label
@@ -78,7 +78,7 @@ def score_epoch_clips(subject_clips, subject_id):
 
 
 def main():
-    metadata_df = pd.read_excel(paths["metadata"])
+    metadata_df = pd.read_excel(paths_resting_state["metadata"])
 
     for i, subject_id in enumerate(metadata_df['mouseId']):
 
@@ -93,7 +93,7 @@ def main():
                   f'proceeding..')
             continue
 
-        annotated_epoch_files = os.listdir(paths['epochs_folder'])
+        annotated_epoch_files = os.listdir(paths_resting_state['epochs_folder'])
         if any(str(subject_id) in file for file in annotated_epoch_files if file.startswith('resting_epochs_man')):
             print(f'Clips for subject {subject_id} have already been scored, proceeding..')
             continue
@@ -104,7 +104,7 @@ def main():
         print(f'Subject id: {subject_id}, Mouse name: {subject_meta["mouseName"].iloc[0]}')
 
         # get the filenames of this subject's clips
-        clips = os.listdir(os.path.join(paths['video_analysis_output'], 'clips'))
+        clips = os.listdir(os.path.join(paths_resting_state['video_analysis_output'], 'clips'))
         subject_clips = [clip for clip in clips if str(subject_id) in clip]
         # make sure the clips are sorted such that they align with the epochs in the epoch object/metadata
         subject_clips = sorted(subject_clips, key=lambda x: int(x.split("_")[-1].split(".")[0]))
@@ -112,7 +112,7 @@ def main():
         # LOAD THE EPOCHS FOR THIS SUBJECT #
 
         epochs = mne.read_epochs(
-            os.path.join(paths['epochs_folder'], f"filtered_epochs_w_clusters_{subject_id}-epo.fif"),
+            os.path.join(paths_resting_state['epochs_folder'], f"filtered_epochs_w_clusters_{subject_id}-epo.fif"),
             preload=True
         )
         # get the resting-state cluster epochs
@@ -135,7 +135,7 @@ def main():
 
         # save resting-state epochs with manual annotations
         resting_epochs.save(
-            os.path.join(paths['epochs_folder'], f"resting_epochs_man_annotated_{subject_id}-epo.fif"),
+            os.path.join(paths_resting_state['epochs_folder'], f"resting_epochs_man_annotated_{subject_id}-epo.fif"),
             overwrite=True
         )
 

@@ -12,7 +12,7 @@ import pandas as pd
 from pynwb import NWBHDF5IO
 
 from nwb_retrieval_functions import get_filtered_eeg, get_package_loss
-from settings import paths
+from settings import paths_resting_state
 
 
 def get_subject_metadata(metadata_path, subject_id):
@@ -69,7 +69,7 @@ def adjust_fps_get_offset(eeg_signal, subject_id, eeg_onsets, s_freq):
     :param s_freq:
     :return: the adjusted framerate
     """
-    metadata_path, video_analysis_output_dir = paths["metadata"], paths["video_analysis_output"]
+    metadata_path, video_analysis_output_dir = paths_resting_state["metadata"], paths_resting_state["video_analysis_output"]
 
     # get the subject's metadata from the file (holds video filename that points to right LED states)
     subject_metadata = get_subject_metadata(metadata_path, int(subject_id))
@@ -153,7 +153,7 @@ def epoch_eeg_fixed(nwb_file, epoch_length=5.0, ploss_threshold=500):
     :param ploss_threshold: threshold of maximum package loss (in milliseconds)
     :return: raw_epochs and filtered_epochs for this NWB file
     """
-    nwb_file_path = os.path.join(paths["nwb_files_folder"], nwb_file)
+    nwb_file_path = os.path.join(paths_resting_state["nwb_files_folder"], nwb_file)
     with NWBHDF5IO(nwb_file_path, "r") as io:
         nwb = io.read()
 
@@ -232,7 +232,7 @@ def main():
     These files can later be used to add movement/behaviour data to.
     :return:
     """
-    for file in os.listdir(paths["nwb_files_folder"]):
+    for file in os.listdir(paths_resting_state["nwb_files_folder"]):
         if not file.endswith(".nwb"):
             continue
 
@@ -240,8 +240,8 @@ def main():
         raw_epochs, filtered_epochs = epoch_eeg_fixed(file)
 
         # save the raw and filtered epochs for this subject
-        raw_epochs.save(os.path.join(paths["epochs_folder"], f'raw_epochs_{file.split(".")[0]}-epo.fif'))
-        filtered_epochs.save(os.path.join(paths["epochs_folder"], f'filtered_epochs_{file.split(".")[0]}-epo.fif'))
+        raw_epochs.save(os.path.join(paths_resting_state["epochs_folder"], f'raw_epochs_{file.split(".")[0]}-epo.fif'))
+        filtered_epochs.save(os.path.join(paths_resting_state["epochs_folder"], f'filtered_epochs_{file.split(".")[0]}-epo.fif'))
 
         print(f"Done with file {file}.")
     print("Done with all NWB files.")

@@ -7,17 +7,26 @@ general = {
     "institution": "University of Groningen"
 }
 
-paths = {
+paths_general = {
+    "all_animal_metadata": "",
+}
+
+paths_resting_state = {
     "edf_folder": "",
     "coordinate_data_folder": "",
     "nwb_files_folder": "",
     "plots_folder": "",
     "epochs_folder": "",
-    "subject_metadata": "",
     "metadata": "",
     "psd_data_folder": "",
     "recordings_folder": "",
     "video_analysis_output": ""
+}
+
+paths_3c_sociability = {
+    "metadata": "",
+    "edf_folder": "",
+    "behaviour_data_dir": ""
 }
 
 # variables used for raw EEG filtering while creating Neurodata Without Border (NWB) files (one of the first steps)

@@ -20,7 +20,7 @@ from sklearn.decomposition import PCA
 from mne.time_frequency import psd_array_multitaper
 
 # imports from other files
-from settings import paths, freq_bands_eeg, freq_bands_emg, quality_emg
+from settings import *
 
 palette = sns.color_palette("husl", 3)
 
@@ -161,7 +161,7 @@ def save_radar_cluster_plot(features, df_plot, subject_id):
     )
     fig.update_annotations(yshift=20)
     fig.update_polars(radialaxis=dict(range=[0, max_value + .05]))
-    fig.write_image(os.path.join(paths['plots_folder'], f'ploss_thresh_500/non_mov_clustering/{subject_id}.png'))
+    fig.write_image(os.path.join(paths_resting_state['plots_folder'], f'ploss_thresh_500/non_mov_clustering/{subject_id}.png'))
 
 
 def tag_outliers(df_numeric, df_plot):
@@ -337,14 +337,14 @@ def classify_and_save_epochs(subject_epochs, subject_id):
     # df that also holds the outliers (length is equal to the amount of non-mov epochs
     non_mov_epochs.metadata["cluster"] = np.array(df_plot_incl_outliers['cluster'])
     non_mov_epochs.save(
-        os.path.join(paths['epochs_folder'], f"epochs_w_cluster_annotations_{subject_id}-epo.fif"),
+        os.path.join(paths_resting_state['epochs_folder'], f"epochs_w_cluster_annotations_{subject_id}-epo.fif"),
         overwrite=True
     )
 
 
 def main():
     # classify non-movement epochs per subject
-    for epochs_filename in os.listdir(paths['epochs_folder']):
+    for epochs_filename in os.listdir(paths_resting_state['epochs_folder']):
         if not epochs_filename.startswith('filtered_epochs_w_movement_') or not epochs_filename.endswith('epo.fif'):
             continue
 
@@ -354,7 +354,7 @@ def main():
         # for now, skipping the subjects that are of bad quality or seem to need clustering using 4 clusters
         print(f"Working with subject {subject_id}.")
 
-        subject_epochs = mne.read_epochs(os.path.join(paths['epochs_folder'], epochs_filename), preload=True)
+        subject_epochs = mne.read_epochs(os.path.join(paths_resting_state['epochs_folder'], epochs_filename), preload=True)
         subject_epochs = subject_epochs[:-1]  # somehow the last epoch holds only zeros
 
         classify_and_save_epochs(subject_epochs, subject_id)

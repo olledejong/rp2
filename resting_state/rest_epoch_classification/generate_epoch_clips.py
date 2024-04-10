@@ -9,7 +9,7 @@ import mne
 import sys
 import numpy as np
 import pandas as pd
-from settings import paths, cluster_annotations
+from settings import paths_resting_state, cluster_annotations
 
 
 def generate_clips(subject_epochs, subject_meta, subject_id):
@@ -23,7 +23,7 @@ def generate_clips(subject_epochs, subject_meta, subject_id):
 
     # now we need to load the video
     video_filename = subject_meta['movie_filename'].iloc[0]
-    path_to_video_file = os.path.join(paths['recordings_folder'], video_filename)
+    path_to_video_file = os.path.join(paths_resting_state['recordings_folder'], video_filename)
 
     # open the video and check if it is actually opened
     cap = cv2.VideoCapture(path_to_video_file)
@@ -45,7 +45,7 @@ def generate_clips(subject_epochs, subject_meta, subject_id):
             end_frame = frame_count - 1
 
         output_file = os.path.join(
-            paths['video_analysis_output'], 'clips',
+            paths_resting_state['video_analysis_output'], 'clips',
             f"{subject_id}_resting_cluster_epoch_{epoch_indexes[i]}.mp4"
         )
         out = cv2.VideoWriter(output_file, cv2.VideoWriter_fourcc(*'mp4v'), fps, (frame_width, frame_height))
@@ -69,14 +69,14 @@ def generate_clips(subject_epochs, subject_meta, subject_id):
 
 
 def main():
-    metadata_df = pd.read_excel(paths["metadata"])
+    metadata_df = pd.read_excel(paths_resting_state["metadata"])
 
     for i, subject_id in enumerate(metadata_df['mouseId']):
 
         subject_meta = metadata_df[metadata_df['mouseId'] == int(subject_id)]
 
         # load this subject's epochs (which include the cluster annotations in the metadata)
-        subject_epochs_path = os.path.join(paths['epochs_folder'], f'filtered_epochs_w_clusters_{subject_id}-epo.fif')
+        subject_epochs_path = os.path.join(paths_resting_state['epochs_folder'], f'filtered_epochs_w_clusters_{subject_id}-epo.fif')
 
         if not os.path.exists(subject_epochs_path):
             print(f"No epoch file with clustering annotation found for subject {subject_id}, proceeding..")
@@ -84,7 +84,7 @@ def main():
 
         subject_epochs = mne.read_epochs(subject_epochs_path)
 
-        all_clips = os.listdir(os.path.join(paths['video_analysis_output'], 'clips'))
+        all_clips = os.listdir(os.path.join(paths_resting_state['video_analysis_output'], 'clips'))
         if any(str(subject_id) in file for file in all_clips):
             print(f"Clips have probably already been generated for subject {subject_id}, proceeding..")
             continue

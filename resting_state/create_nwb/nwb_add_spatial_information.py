@@ -8,7 +8,7 @@ import ndx_events
 from pynwb import NWBHDF5IO, TimeSeries
 from pynwb.behavior import SpatialSeries
 
-from settings import paths
+from settings import paths_resting_state
 
 def get_coordinate_data(xy_filename):
     """
@@ -94,8 +94,8 @@ def generate_module_components(data):
 
 
 def main():
-    nwb_folder = paths['nwb_files_folder']
-    coordinates_folder = paths['coordinate_data_folder']
+    nwb_folder = paths_resting_state['nwb_files_folder']
+    coordinates_folder = paths_resting_state['coordinate_data_folder']
 
     # loop over all created NWB files
     nwb_files = os.listdir(nwb_folder)
