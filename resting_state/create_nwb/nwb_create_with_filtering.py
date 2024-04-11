@@ -18,7 +18,7 @@ from hdmf.backends.hdf5.h5_utils import H5DataIO
 
 from helper_functions import get_all_edf_files
 from eeg_filtering_functions import filtering
-from settings import general, paths, filtering
+from settings import general, paths_resting_state, filtering
 
 
 def create_nwb_file(ses_descr, start_t, id, ses_id, arena):
@@ -46,7 +46,7 @@ def load_metadata(edf_file, metadata_file):
     metadata = pd.read_excel(metadata_file, dtype={'mouseName': str, 'mouseId': str})
 
     # Get metadata info
-    filename = re.split('/', edf_file)[-1]  # split absolute path on last occurrence of '/'
+    directory, filename = os.path.split(edf_file)
     info = metadata[metadata['edf'] == filename].to_dict(orient='records')[0]
 
     # Prep NWB file metadata
@@ -189,9 +189,9 @@ def main():
     """
     Core of this file. Calls all other functions.
     """
-    edf_folder = paths['edf_folder']
-    nwb_output_folder = paths['nwb_files_folder']
-    metadata_file = paths['metadata']
+    edf_folder = paths_resting_state['edf_folder']
+    nwb_output_folder = paths_resting_state['nwb_files_folder']
+    metadata_file = paths_resting_state['metadata']
 
     edf_files = get_all_edf_files(edf_folder)
 
