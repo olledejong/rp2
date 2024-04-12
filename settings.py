@@ -26,7 +26,15 @@ paths_resting_state = {
 paths_3c_sociability = {
     "metadata": "",
     "edf_folder": "",
-    "behaviour_data_dir": ""
+    "behaviour_data_dir": "",
+    "plots_folder": ""
+}
+
+paths_3c_preference = {
+    "metadata": "",
+    "edf_folder": "",
+    "behaviour_data_dir": "",
+    "plots_folder": ""
 }
 
 # variables used for raw EEG filtering while creating Neurodata Without Border (NWB) files (one of the first steps)
