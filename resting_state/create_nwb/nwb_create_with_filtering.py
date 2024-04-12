@@ -2,10 +2,8 @@
 Filter EEG data and create NWB files
 """
 import os
-import re
 import mne
 import sys
-import json
 import numpy as np
 import pandas as pd
 from datetime import datetime
