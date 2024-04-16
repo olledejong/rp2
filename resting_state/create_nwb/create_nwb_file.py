@@ -14,9 +14,9 @@ from pynwb.ecephys import ElectricalSeries
 from ndx_events import TTLs
 from hdmf.backends.hdf5.h5_utils import H5DataIO
 
-from helper_functions import get_all_edf_files
-from eeg_filtering_functions import filtering
-from settings import general, paths_resting_state, filtering
+from shared.helper_functions import get_all_edf_files
+from shared.eeg_filtering_functions import filtering
+from settings import *
 
 
 def create_nwb_file(ses_descr, start_t, id, ses_id, arena):
@@ -183,13 +183,13 @@ def add_ttl(nwb, raw):
     return nwb
 
 
-def main():
+def main(experiment_paths):
     """
     Core of this file. Calls all other functions.
     """
-    edf_folder = paths_resting_state['edf_folder']
-    nwb_output_folder = paths_resting_state['nwb_files_folder']
-    metadata_file = paths_resting_state['metadata']
+    edf_folder = experiment_paths['edf_folder']
+    nwb_output_folder = experiment_paths['nwb_files_folder']
+    metadata_file = experiment_paths['metadata']
 
     edf_files = get_all_edf_files(edf_folder)
 
@@ -221,5 +221,7 @@ def main():
 
 # Starting point. Process begins here.
 if __name__ == "__main__":
-    main()
-    sys.exit(0)
+    experiment_paths = ''  # TODO add experiment specific paths variable here (e.g.: paths_resting_state)
+    main(experiment_paths)
+
+    sys.exit('Done')

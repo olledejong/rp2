@@ -16,7 +16,7 @@ def get_all_edf_files(root_dir):
     """
     edf_files = []
     for root, dirs, files in os.walk(root_dir):
-        if "trash_recordings" in dirs:  # do not handle recordings that are in trash folder
+        if "trash_recordings" in dirs:  # do not handle recordings that are in z_trash folder
             dirs.remove("trash_recordings")
         edf_files.extend(glob.glob(os.path.join(root, '*.edf')))
     return edf_files
