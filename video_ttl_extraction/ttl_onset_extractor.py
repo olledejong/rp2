@@ -11,7 +11,7 @@ import pickle
 import pandas as pd
 import numpy as np
 
-from settings import paths_resting_state
+from settings import *
 
 
 def is_led_on(roi, threshold=245):
@@ -41,7 +41,7 @@ def export_frame(video_name, frame_number, frame, state, images_path):
     cv2.imwrite(save_to, frame)
 
 
-def get_led_states(rois_df):
+def get_led_states(paths, rois_df):
     """
     For every row in the rois_df (holds the movie filename and roi info), the LED
     state is extracted and is stored. All saved info is later saved to a file.
@@ -49,12 +49,12 @@ def get_led_states(rois_df):
     :param rois_df: every row had a filename (mp4/avi) and a ROI
     :return:
     """
-    snapshot_path = os.path.join(paths_resting_state['video_analysis_output'], "snapshots")
+    snapshot_path = os.path.join(paths['video_analysis_output'], "snapshots")
     all_led_states = {}
 
     for index, row in rois_df.iterrows():
         print(f"Working with video {row['Video']}.")
-        video_path = os.path.join(paths_resting_state['recordings_folder'], row['Video'])
+        video_path = os.path.join(paths['recordings_folder'], row['Video'])
         roi = ast.literal_eval(row['ROI'])
         cap = cv2.VideoCapture(video_path)
         total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
@@ -93,11 +93,11 @@ def get_led_states(rois_df):
     return all_led_states
 
 
-def main():
-    roi_df_path = os.path.join(paths_resting_state["video_analysis_output"], "video_rois.xlsx")
-    pickle_path = os.path.join(paths_resting_state["video_analysis_output"], "pickle")
+def main(paths):
+    roi_df_path = os.path.join(paths["video_analysis_output"], "video_rois.xlsx")
+    pickle_path = os.path.join(paths["video_analysis_output"], "pickle")
     roi_df = pd.read_excel(roi_df_path)  # read the roi dataframe created with the identify_led_rois.py script
-    led_states = get_led_states(roi_df)  # get the LED states for all frames of every file
+    led_states = get_led_states(paths, roi_df)  # get the LED states for all frames of every file
     # save the LED states for every frame of every video file
     with open(f'{pickle_path}/led_states.pickle', "wb") as f:
         pickle.dump(led_states, f, pickle.HIGHEST_PROTOCOL)
@@ -105,4 +105,4 @@ def main():
 
 # process starts here
 if __name__ == '__main__':
-    main()
+    main(paths_3c_sociability)  # TODO change this parameter to make use of the correct paths
