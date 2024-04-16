@@ -7,7 +7,13 @@ import matplotlib.pyplot as plt
 
 
 def get_all_edf_files(root_dir):
-    # find all .edf files (also works if all .edf files are in the root directory)
+    """
+    Finds all .edf files. Works for edf files located in the root of the path, but
+    also for all nested edf files
+
+    :param root_dir:
+    :return:
+    """
     edf_files = []
     for root, dirs, files in os.walk(root_dir):
         if "trash_recordings" in dirs:  # do not handle recordings that are in trash folder
@@ -18,7 +24,7 @@ def get_all_edf_files(root_dir):
 
 def save_figure(path, bbox_inches='tight', dpi=300):
     """
-    Custom function that lets you save a pyplot figure and creates the directory where necessary
+    Custom function that lets you save a figure and creates the directory where necessary
     """
     directory = os.path.split(path)[0]
     filename = os.path.split(path)[1]
