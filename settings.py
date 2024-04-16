@@ -27,7 +27,9 @@ paths_3c_sociability = {
     "metadata": "",
     "edf_folder": "",
     "behaviour_data_dir": "",
-    "plots_folder": ""
+    "plots_folder": "",
+    "recordings_folder": "",
+    "video_analysis_output": ""
 }
 
 paths_3c_preference = {
