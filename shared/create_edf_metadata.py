@@ -9,15 +9,11 @@ from shared.helper_functions import *
 
 
 def generate_experiment_metadata():
-    all_animals_metadata = get_file_path(
-        "Select the excel file that holds information about all experimental animals"
-    )
+    all_animals_metadata = select_file("Select the excel file that holds information about all experimental animals")
     sub_meta = pd.read_excel(all_animals_metadata, dtype={'mouseName': str, 'mouseId': str})
 
     # find all .edf files (also works if all .edf files are in the root directory)
-    edf_files = get_all_edf_files(
-        get_folder_path("Select the folder that holds the EDF files")
-    )
+    edf_files = get_all_edf_files(select_folder("Select the folder that holds the EDF files"))
 
     df = pd.DataFrame()  # empty dataframe to store all data in
     for i, filename in enumerate(edf_files):

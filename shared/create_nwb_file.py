@@ -1,11 +1,11 @@
 """
 Filter EEG data and create NWB files
 """
-import os
 import mne
-import sys
 import numpy as np
 import pandas as pd
+import three_chamber.settings as three_camber_settings
+
 from datetime import datetime
 from dateutil import tz
 from pynwb import NWBFile, NWBHDF5IO
@@ -14,9 +14,8 @@ from pynwb.ecephys import ElectricalSeries
 from ndx_events import TTLs
 from hdmf.backends.hdf5.h5_utils import H5DataIO
 
-from shared.helper_functions import get_all_edf_files
+from shared.helper_functions import *
 from shared.eeg_filtering_functions import filter_eeg
-import three_chamber.settings as three_camber_settings
 from settings_general import *
 
 
@@ -261,15 +260,15 @@ def add_ttl(nwb, raw):
     return nwb
 
 
-def main(paths):
+def main():
     """
     Core of this file. Loops through all EDF files and creates a NWB file holding
     information on the subject, the electrodes, ttl etc. Of course also holds the raw
     and filtered EEG data.
     """
-    edf_folder = paths['edf_folder']
-    nwb_output_folder = paths['nwb_files_folder']
-    metadata_file = paths['metadata']
+    edf_folder = select_folder("Select the folder that holds the EDF files")
+    nwb_output_folder = select_or_create_folder("Select or create a folder to hold the output NWB files")
+    metadata_file = select_file("Select the experiment's metadata file")
 
     # load all edf filenames or this experiment
     edf_files = get_all_edf_files(edf_folder)
@@ -303,8 +302,5 @@ def main(paths):
 
 # Starting point. Process begins here.
 if __name__ == "__main__":
-    experiment_paths = ''  # TODO add experiment specific paths variable here (e.g.: paths_resting_state)
-    main(experiment_paths)
-
+    main()
     print('Done')
-    sys.exit(0)  # success

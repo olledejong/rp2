@@ -43,17 +43,17 @@ def save_figure(path, bbox_inches='tight', dpi=300):
     plt.close()
 
 
-def get_folder_path(title):
+def select_folder(title):
     root = Tk()
-    root.withdraw()  # we don't want a full GUI, so keep the root window from appearing
-    # show an "Open" dialog box and return the path to the selected folder
+    root.withdraw()
+
     return filedialog.askdirectory(title=title)
 
 
-def get_file_path(title, filetypes=(("Excel files", "*.xlsx"), ("All files", "*.*"))):
+def select_file(title, filetypes=(("Excel files", "*.xlsx"), ("All files", "*.*"))):
     root = Tk()
-    root.withdraw()  # we don't want a full GUI, so keep the root window from appearing
-    # show an "Open" dialog box and return the path to the selected file
+    root.withdraw()
+
     return filedialog.askopenfilename(
         title=title,
         filetypes=filetypes
@@ -68,4 +68,15 @@ def get_save_path(title, filetypes=(("Excel files", "*.xlsx"), ("All files", "*.
         title=title,
         defaultextension=".xlsx",
         filetypes=filetypes
+    )
+
+
+def select_or_create_folder(title):
+    root = Tk()
+    root.withdraw()  # Hide the main window
+
+    # Prompt user to select an existing folder or create a new one
+    return filedialog.askdirectory(
+        title=title,
+        mustexist=False
     )
