@@ -4,14 +4,12 @@ of all videos located in the given video folder. This LED state extraction is do
 using the ROIs that are created using the identify_led_rois.py script.
 the ROIs
 """
-import os
 import ast
 import cv2
 import pickle
 import pandas as pd
 import numpy as np
 
-from settings_general import *
 from shared.helper_functions import *
 
 
