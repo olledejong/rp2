@@ -13,7 +13,7 @@ This repository is structured in a way that it contains a folder for each analys
 own README file describing the usage of the analysis files for that experiment:
 
 * [Resting state experiment](resting_state/README.md)
-* [Three chamber experiments](3chamber/README.md)
+* [Three chamber experiments](three_chamber/README.md)
 
 ### Experimenters
 
