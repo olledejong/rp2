@@ -65,7 +65,7 @@ def adjust_fps_get_offset(eeg_signal, subject_id, eeg_onsets, s_freq):
 
     :param eeg_signal: one of the channel's signal to calculate the length from first to last eeg ttl onset
     :param subject_id:
-    :param eeg_onsets:
+    :param eeg_onsets: the timestamps (in seconds) of the EEG TTL pulses
     :param s_freq:
     :return: the adjusted framerate
     """
@@ -80,16 +80,18 @@ def adjust_fps_get_offset(eeg_signal, subject_id, eeg_onsets, s_freq):
     led_onsets = get_led_onset_data(video_analysis_output_dir, movie_filename)
     led_onsets = np.where(np.logical_and(np.diff(led_onsets), led_onsets[1:]))[0] + 1
 
-    # Find length of eeg signal between the two pulse combination. For example first and last
+    # find length of eeg signal between the two pulse combination (i.e. the number of samples between the two pulses)
     eeg_len = eeg_signal[int(s_freq * eeg_onsets[0]): int(s_freq * eeg_onsets[-1])].shape[0]
-
     # find length of video frames between the two pulse combination
     frame_len = led_onsets[-1] - led_onsets[0]
 
+    # divide the number of frames recorded between the two pulses by the seconds that passed between the two EEG TTL
+    # pulses, which we get by dividing the number of EEG samples recorded between the two pulses by the sampling freq
     adjusted_fps = (frame_len / (eeg_len / s_freq))
 
-    first_ttl_onset_secs = eeg_onsets[0] / s_freq
-    first_led_onset_secs = led_onsets[0] / adjusted_fps
+    # calculate the offset in seconds between the first EEG TTL and video LED TTL onset
+    first_ttl_onset_secs = eeg_onsets[0] / s_freq  # scale back to seconds
+    first_led_onset_secs = led_onsets[0] / adjusted_fps  # scale back to seconds using adjusted FPS
     offset_secs = first_ttl_onset_secs - first_led_onset_secs
 
     return adjusted_fps, offset_secs
