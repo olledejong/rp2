@@ -14,11 +14,11 @@ paths_general = {
 
 # variables used for raw EEG filtering while creating Neurodata Without Border (NWB) files (one of the first steps)
 filtering = {
-    "lcut": 0.5,
-    "hcut": 200,
-    "art": None,
-    "low_val": 0.006,
-    "high_val": 0.013,
+    "lcut": 0.5,  # lower limit of desired band / filter (to be normalized)
+    "hcut": 200,  # upper limit of desired band / filter (to be normalized)
+    "art": None,  # std of the signal is multiplied by this value to filter out additional artifacts
+    "low_val": 0.006,  # lower value of artifact removal (caused by package loss)
+    "high_val": 0.013,  # upper value of artifact removal (caused by package loss)
     "electrode_info": {
         "EEG 2": ["OFC_R", 2.7, -0.75, 2.4, "depth"],
         "EEG 3": ["OFC_L", 2.7, 0.75, 2.4, "depth"],
