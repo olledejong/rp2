@@ -17,6 +17,8 @@ from hdmf.backends.hdf5.h5_utils import H5DataIO
 from shared.helper_functions import *
 from shared.eeg_filtering_functions import filter_eeg
 from settings_general import *
+from three_chamber.settings import *
+from resting_state.settings import *
 
 
 def create_nwb_file(ses_descr, start_t, id, ses_id, arena):
