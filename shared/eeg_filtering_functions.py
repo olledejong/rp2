@@ -27,7 +27,7 @@ def interpolate_nan(padata, pkind='linear'):
 
 # Define general functions
 # noinspection PyTupleAssignmentBalance
-def filtering(x, s_freq, lp=0.5, hp=200, lower_val=0.006, higher_val=0.013, art=3):
+def filter_eeg(x, s_freq, lp=0.5, hp=200, lower_val=0.006, higher_val=0.013, art=3):
     """
     Filters the EEG signal.
 

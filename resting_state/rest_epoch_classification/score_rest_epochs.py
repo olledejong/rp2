@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 from tkinter import *
 
-from settings import paths_resting_state, cluster_annotations, omitted_after_clustering, omitted_other
+from resting_state.settings import *
 
 
 def score_epoch_clip(input_video, epoch_n, subject_id):

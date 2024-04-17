@@ -12,7 +12,7 @@ import pandas as pd
 from pynwb import NWBHDF5IO
 
 from shared.nwb_retrieval_functions import get_filtered_eeg, get_package_loss
-from settings import paths_resting_state
+from resting_state.settings import paths_resting_state
 
 
 def get_subject_metadata(metadata_path, subject_id):

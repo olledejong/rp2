@@ -11,7 +11,8 @@ import pickle
 import pandas as pd
 import numpy as np
 
-from settings import *
+from settings_general import *
+from three_chamber.settings import *
 
 
 def is_led_on(roi, threshold=245):
@@ -105,4 +106,4 @@ def main(paths):
 
 # process starts here
 if __name__ == '__main__':
-    main(paths_3c_sociability)  # TODO change this parameter to make use of the correct paths
+    main()  # TODO put the correct paths variable as argument here

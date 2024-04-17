@@ -17,7 +17,7 @@ from hdmf.backends.hdf5.h5_utils import H5DataIO
 from shared.helper_functions import get_all_edf_files
 from shared.eeg_filtering_functions import filter_eeg
 import three_chamber.settings as three_camber_settings
-from settings import *
+from settings_general import *
 
 
 def create_nwb_file(ses_descr, start_t, id, ses_id, arena):
@@ -31,7 +31,7 @@ def create_nwb_file(ses_descr, start_t, id, ses_id, arena):
     :param arena:
     :return:
     """
-    # load some project information from the settings.py file
+    # load some project information from the settings_general.py file
     experimenter = general['experimenter']
     institution = general['institution']
     lab = general['lab']
@@ -163,7 +163,7 @@ def add_eeg_data(nwb, file):
     raw_eeg = mne.io.read_raw_edf(file)
     sfreq = raw_eeg.info['sfreq']
 
-    # get the data using the keys of the electrode_info dictionary (see settings.py)
+    # get the data using the keys of the electrode_info dictionary (see settings_general.py)
     data = raw_eeg.get_data(picks=list(electrode_info.keys()))
 
     # create electrode table

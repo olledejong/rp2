@@ -8,7 +8,8 @@ import ndx_events
 from pynwb import NWBHDF5IO, TimeSeries
 from pynwb.behavior import SpatialSeries
 
-from settings import paths_resting_state
+from resting_state.settings import paths_resting_state
+
 
 def get_coordinate_data(xy_filename):
     """

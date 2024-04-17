@@ -10,7 +10,7 @@ import ndx_events
 import numpy as np
 from pynwb import NWBHDF5IO
 
-from settings import paths_resting_state
+from resting_state.settings import paths_resting_state
 
 
 def get_epoch_array(subject_id, epochs_folder):

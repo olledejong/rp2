@@ -9,7 +9,7 @@ import mne
 import sys
 import numpy as np
 import pandas as pd
-from settings import paths_resting_state, cluster_annotations
+from resting_state.settings import *
 
 
 def generate_clips(subject_epochs, subject_meta, subject_id):

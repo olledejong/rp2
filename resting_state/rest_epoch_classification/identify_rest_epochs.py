@@ -20,7 +20,8 @@ from sklearn.decomposition import PCA
 from mne.time_frequency import psd_array_multitaper
 
 # imports from other files
-from settings import *
+from settings_general import *
+from resting_state.settings import *
 
 palette = sns.color_palette("husl", 3)
 

@@ -9,7 +9,8 @@ import sys
 import pandas as pd
 
 from helper_functions import get_all_edf_files
-from settings import *
+from settings_general import *
+from three_chamber.settings import *
 
 
 def generate_experiment_metadata(paths):
@@ -59,7 +60,7 @@ if __name__ == '__main__':
 
     # depending on what experiment you want to create the metadata for, put the paths variable of that experiment
     # as the argument to the function below
-    generate_experiment_metadata(paths_3c_sociability)  # TODO change this function argument when you run
+    generate_experiment_metadata()  # TODO put the correct paths variable as argument here
 
     print('Done')
 

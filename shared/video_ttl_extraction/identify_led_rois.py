@@ -9,7 +9,8 @@ import pandas as pd
 from tkinter import filedialog
 from tkinter import Tk
 
-from settings import *
+from settings_general import *
+from three_chamber.settings import *
 
 
 def get_folder_path():
@@ -108,4 +109,4 @@ def save_led_rois(folder_path, paths):
 
 if __name__ == "__main__":
     video_folder_path = get_folder_path()
-    save_led_rois(video_folder_path, paths_3c_sociability)  # TODO change paths argument to export to correct location
+    save_led_rois(video_folder_path, )  # TODO set second argument to paths variable of experiment of choice
