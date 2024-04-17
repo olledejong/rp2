@@ -3,64 +3,59 @@ This file is used to generate unique metadata for an experiment. This metadata f
  a row for each subject. It holds information like: mouseId, genotype, but also the name of
 the EDF file (EEG data) that belongs to that subject.
 """
-import os
 import re
-import sys
 import pandas as pd
-
-from helper_functions import get_all_edf_files
-from settings_general import *
-from three_chamber.settings import *
+from shared.helper_functions import *
 
 
-def generate_experiment_metadata(paths):
-    # load the subject metadata
-    sub_meta = pd.read_excel(paths_general['all_animal_metadata'], dtype={'mouseName': str, 'mouseId': str})
-
-    df = pd.DataFrame()  # empty dataframe to store all data in
+def generate_experiment_metadata():
+    all_animals_metadata = get_file_path(
+        "Select the excel file that holds information about all experimental animals"
+    )
+    sub_meta = pd.read_excel(all_animals_metadata, dtype={'mouseName': str, 'mouseId': str})
 
     # find all .edf files (also works if all .edf files are in the root directory)
-    edf_files = get_all_edf_files(paths['edf_folder'])
+    edf_files = get_all_edf_files(
+        get_folder_path("Select the folder that holds the EDF files")
+    )
 
-    for i, filename in enumerate(edf_files):  # loop over all edf files
-        if ".edf" not in filename:  # only consider .edf type
+    df = pd.DataFrame()  # empty dataframe to store all data in
+    for i, filename in enumerate(edf_files):
+        if ".edf" not in filename:
             continue
 
-        directory, filename = os.path.split(filename)
-        info = re.split('_', filename)  # split filename to extract data
+        _, filename = os.path.split(filename)
 
-        # get specifics from filename
-        transmitterId, subjectId, mouseName = info[1], str(info[2]), str(info[3])
-        date, time, sesId = info[4], info[5], info[6]
-        minfo = sub_meta[sub_meta['mouseId'] == subjectId]
-        if len(minfo) == 0:
-            sys.exit(f"Error: given mouseId ({subjectId}) could not be found in subject metadata")
+        # extract specific info from filename
+        _, transmitterId, subjectId, mouseName, date, time, sesId = re.split('_', filename)
+        subjectId, mouseName = str(subjectId), str(mouseName)
 
-        tmp = pd.DataFrame({
+        other_animal_info = sub_meta[sub_meta['mouseId'] == subjectId]
+
+        # if there's no additional info on this subject in the larger animal metadata dataframe, skip it
+        if len(other_animal_info) == 0:
+            print(f"Skipping ({subjectId}): could not be found in subject metadata.")
+            continue
+
+        df = pd.concat([df, pd.DataFrame({
             'edf': filename,
-            'date': date,
-            'time': time,
-            'sesId': sesId,
-            'transmitterId': transmitterId, 'arena': minfo['arena'].tolist()[0],
+            'date': date, 'time': time, 'sesId': sesId,
+            'transmitterId': transmitterId, 'arena': other_animal_info['arena'].tolist()[0],
             'mouseId': subjectId, 'mouseName': mouseName,
-            'genotype': minfo['genotype'].tolist()[0],
-            'birthday': minfo['birthday'].tolist()[0],
-            'rfid': minfo['RFID'].tolist()[0],
-            'weight': minfo['weight'].tolist()[0],
-            'sex': minfo['sex'].tolist()[0],
-            'species': minfo['species'].tolist()[0]
-        }, index=[i])  # temp container
+            'genotype': other_animal_info['genotype'].tolist()[0],
+            'birthday': other_animal_info['birthday'].tolist()[0],
+            'rfid': other_animal_info['RFID'].tolist()[0],
+            'weight': other_animal_info['weight'].tolist()[0],
+            'sex': other_animal_info['sex'].tolist()[0],
+            'species': other_animal_info['species'].tolist()[0]
+        }, index=[i])])  # concatenate metadata for this edf file to the rest
 
-        df = pd.concat([df, tmp])  # concatenate metadata for this edf file to the rest
-
-    df.to_excel(paths['metadata'], index=False)
+    save_to = get_save_path(
+        "Select where you want to save the experiment metadata"
+    )
+    df.to_excel(save_to, index=False)
 
 
 if __name__ == '__main__':
-
-    # depending on what experiment you want to create the metadata for, put the paths variable of that experiment
-    # as the argument to the function below
-    generate_experiment_metadata()  # TODO put the correct paths variable as argument here
-
+    generate_experiment_metadata()
     print('Done')
-

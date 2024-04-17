@@ -3,6 +3,8 @@ File that contains helper functions
 """
 import os
 import glob
+from tkinter import Tk, filedialog
+
 import matplotlib.pyplot as plt
 
 
@@ -39,3 +41,31 @@ def save_figure(path, bbox_inches='tight', dpi=300):
     # Actually save the figure
     plt.savefig(save_path, bbox_inches=bbox_inches, dpi=dpi)
     plt.close()
+
+
+def get_folder_path(title):
+    root = Tk()
+    root.withdraw()  # we don't want a full GUI, so keep the root window from appearing
+    # show an "Open" dialog box and return the path to the selected folder
+    return filedialog.askdirectory(title=title)
+
+
+def get_file_path(title, filetypes=(("Excel files", "*.xlsx"), ("All files", "*.*"))):
+    root = Tk()
+    root.withdraw()  # we don't want a full GUI, so keep the root window from appearing
+    # show an "Open" dialog box and return the path to the selected file
+    return filedialog.askopenfilename(
+        title=title,
+        filetypes=filetypes
+    )
+
+
+def get_save_path(title, filetypes=(("Excel files", "*.xlsx"), ("All files", "*.*"))):
+    root = Tk()
+    root.withdraw()
+
+    return filedialog.asksaveasfilename(
+        title=title,
+        defaultextension=".xlsx",
+        filetypes=filetypes
+    )
