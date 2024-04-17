@@ -24,12 +24,16 @@ def get_all_edf_files(root_dir):
     return edf_files
 
 
+def create_dir_if_not_exists(directory):
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
+
 def save_figure(path, bbox_inches='tight', dpi=300):
     """
     Custom function that lets you save a figure and creates the directory where necessary
     """
-    directory = os.path.split(path)[0]
-    filename = os.path.split(path)[1]
+    directory, filename = os.path.split(path)
     if directory == '':
         directory = '.'
 
