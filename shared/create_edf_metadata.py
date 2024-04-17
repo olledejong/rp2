@@ -27,7 +27,7 @@ def generate_experiment_metadata():
         _, filename = os.path.split(filename)
 
         # extract specific info from filename
-        _, transmitterId, subjectId, mouseName, date, time, sesId = re.split('_', filename)
+        _, transmitterId, subjectId, mouseName, date, time, sesId, _ = re.split('_', filename)
         subjectId, mouseName = str(subjectId), str(mouseName)
 
         other_animal_info = sub_meta[sub_meta['mouseId'] == subjectId]
