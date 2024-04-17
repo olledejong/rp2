@@ -61,7 +61,7 @@ def load_metadata(edf_file, experiment_edf_metadata):
     """
     # Load metadata file
     _, filename = os.path.split(experiment_edf_metadata)
-    experiment_name = filename.rsplit('_', 1)
+    experiment_name = filename.rsplit('_', 1)[0]
     metadata = pd.read_excel(experiment_edf_metadata, dtype={'mouseName': str, 'mouseId': str})
 
     # Get metadata info
@@ -206,8 +206,7 @@ def add_filtered_eeg(nwb, raw, s_freq, all_table_region):
     art = filtering['art']
 
     # if 3-chamber, and we want to resample to a specific frequency, do so
-    if three_camber_settings.filtering['resample_freq'] is not None:
-        resample_freq = three_camber_settings.filtering['resample_freq']
+    if resample_freq is not None:
         raw.resample(resample_freq)
         print(f'Resampled EEG data from {s_freq} Hz to {resample_freq} Hz')
         s_freq = resample_freq  # set s_freq to the sampling frequency that data has been resampled to
@@ -277,7 +276,7 @@ def main():
 
     # for each file, generate a NWB file through multiple (processing) steps
     for i, file in enumerate(edf_files):
-        print(f"Working on {file.split('/')[-1]}")
+        print(f"Creating NWB with EEG data from EDF file {file.split('/')[-1]}")
 
         # load needed information from experiment specific EDF metadata created using 'create_edf_metadata.py'
         info, identifier, nwb = load_metadata(file, metadata_file)
@@ -295,7 +294,7 @@ def main():
 
         with NWBHDF5IO(f'{nwb_output_folder}/{identifier}.nwb', 'w') as io:
             io.write(nwb)
-        print(f"Saved file, {round(i / len(edf_files) * 100)}% done")
+        print(f"Saved file, {round(i / len(edf_files) * 100)}% done\n")
 
         # clean up
         raw.close()
