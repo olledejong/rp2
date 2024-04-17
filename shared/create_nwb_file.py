@@ -276,8 +276,6 @@ def main(paths):
 
     # for each file, generate a NWB file through multiple (processing) steps
     for i, file in enumerate(edf_files):
-        if '78233' not in file:
-            continue
         print(f"Working on {file.split('/')[-1]}")
 
         # load needed information from experiment specific EDF metadata created using 'create_edf_metadata.py'
