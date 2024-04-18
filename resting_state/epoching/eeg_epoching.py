@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 from pynwb import NWBHDF5IO
 
+from shared.eeg_epoching_functions import adjust_fps, get_first_ttl_offset
 from shared.nwb_retrieval_functions import get_filtered_eeg, get_package_loss
 from resting_state.settings import paths_resting_state
 
@@ -53,48 +54,14 @@ def sample_to_frame(eeg_tp_in_samples, adjusted_fps, s_freq, offset):
     :param offset:
     :return:
     """
-    eeg_tp_secs = eeg_tp_in_samples / s_freq  # from samples to seconds
-    video_tp_secs = eeg_tp_secs - offset  # subtract the offset so we have the video tp in secs
+    # go from eeg tp in samples to eeg tp in seconds
+    eeg_tp_secs = eeg_tp_in_samples / s_freq
+
+    # first ttl onset always later in video than in EEG, so to go from eeg tp in seconds to the video tp in seconds
+    # we add the absolute offset between the two TTLs
+    video_tp_secs = eeg_tp_secs + np.abs(offset)
 
     return video_tp_secs * adjusted_fps  # go to frames
-
-
-def adjust_fps_get_offset(eeg_signal, subject_id, eeg_onsets, s_freq):
-    """
-    Adjusts the FPS that is used to go from EEG sample number to Video Frame number.
-
-    :param eeg_signal: one of the channel's signal to calculate the length from first to last eeg ttl onset
-    :param subject_id:
-    :param eeg_onsets: the timestamps (in seconds) of the EEG TTL pulses
-    :param s_freq:
-    :return: the adjusted framerate
-    """
-    metadata_path, video_analysis_output_dir = paths_resting_state["metadata"], paths_resting_state["video_analysis_output"]
-
-    # get the subject's metadata from the file (holds video filename that points to right LED states)
-    subject_metadata = get_subject_metadata(metadata_path, int(subject_id))
-    movie_filename = subject_metadata["movie_filename"].iloc[0]  # movie filename the subject's in
-
-    # get the LED states for this subject (i.e. get the LED states of the correct video)
-    # and then get the frames where the LED turned ON (i.e. get all boolean event changes from OFF to ON (0 to 1)
-    led_onsets = get_led_onset_data(video_analysis_output_dir, movie_filename)
-    led_onsets = np.where(np.logical_and(np.diff(led_onsets), led_onsets[1:]))[0] + 1
-
-    # find length of eeg signal between the two pulse combination (i.e. the number of samples between the two pulses)
-    eeg_len = eeg_signal[int(s_freq * eeg_onsets[0]): int(s_freq * eeg_onsets[-1])].shape[0]
-    # find length of video frames between the two pulse combination
-    frame_len = led_onsets[-1] - led_onsets[0]
-
-    # divide the number of frames recorded between the two pulses by the seconds that passed between the two EEG TTL
-    # pulses, which we get by dividing the number of EEG samples recorded between the two pulses by the sampling freq
-    adjusted_fps = (frame_len / (eeg_len / s_freq))
-
-    # calculate the offset in seconds between the first EEG TTL and video LED TTL onset
-    first_ttl_onset_secs = eeg_onsets[0] / s_freq  # scale back to seconds
-    first_led_onset_secs = led_onsets[0] / adjusted_fps  # scale back to seconds using adjusted FPS
-    offset_secs = first_ttl_onset_secs - first_led_onset_secs
-
-    return adjusted_fps, offset_secs
 
 
 def get_epochs(good_epochs, epochs_per_chan, genotype, info, se_tps_sample, se_tps_frames, subject_id):
@@ -167,8 +134,19 @@ def epoch_eeg_fixed(nwb_file, epoch_length=5.0, ploss_threshold=500):
         subject_id = nwb.subject.subject_id  # subject id
         genotype = nwb.subject.genotype  # genotype of the subject
 
+    metadata_path, video_analysis_output_dir = paths_resting_state["metadata"], paths_resting_state["video_analysis_output"]
+
+    # get the subject's metadata from the file (holds video filename that points to right LED states)
+    subject_metadata = get_subject_metadata(metadata_path, int(subject_id))
+    movie_filename = subject_metadata["movie_filename"].iloc[0]  # movie filename the subject's in
+
+    # get the LED states for this subject (i.e. get the LED states of the correct video)
+    # and then get the frames where the LED turned ON (i.e. get all boolean event changes from OFF to ON (0 to 1)
+    led_onsets = get_led_onset_data(video_analysis_output_dir, movie_filename)
+    led_onsets = np.where(np.logical_and(np.diff(led_onsets), led_onsets[1:]))[0] + 1
     # as we noticed the fps is not exactly 30, we have to recalculate it to properly align the EEG and Video
-    adjusted_fps, offset = adjust_fps_get_offset(filtered_eeg[0], subject_id, eeg_ttl_onsets_secs, s_freq)
+    adjusted_fps = adjust_fps(filtered_eeg[0], eeg_ttl_onsets_secs, led_onsets, s_freq)
+    first_ttl_offset = get_first_ttl_offset(eeg_ttl_onsets_secs, led_onsets, adjusted_fps, s_freq)
 
     start_end_tps_s, start_end_tps_f = [], []  # to keep the starting and end-point of the epochs (samples & frames)
 
@@ -193,8 +171,8 @@ def epoch_eeg_fixed(nwb_file, epoch_length=5.0, ploss_threshold=500):
         start_end_tps_s.append(f"{epoch_start}-{epoch_end}")
 
         # convert the start and end time-points of this epoch from samples to frames
-        frame_start = sample_to_frame(int(epoch_start), adjusted_fps, s_freq, offset)
-        frame_end = sample_to_frame(int(epoch_end), adjusted_fps, s_freq, offset)
+        frame_start = sample_to_frame(int(epoch_start), adjusted_fps, s_freq, first_ttl_offset)
+        frame_end = sample_to_frame(int(epoch_end), adjusted_fps, s_freq, first_ttl_offset)
         # and store them as well
         start_end_tps_f.append(f"{frame_start}-{frame_end}")
 
