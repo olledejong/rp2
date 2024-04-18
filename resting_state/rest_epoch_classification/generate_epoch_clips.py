@@ -3,16 +3,17 @@ This file can be used to extract clips from a experiment recording based on the 
 of the epoch file that is read. This epoch file namely holds a start and end frame timepoint
 for each epoch.
 """
-import os
 import cv2
 import mne
 import sys
 import numpy as np
 import pandas as pd
-from resting_state.settings import *
+
+from resting_state.settings import cluster_annotations
+from shared.helper_functions import *
 
 
-def generate_clips(subject_epochs, subject_meta, subject_id):
+def generate_clips(subject_epochs, subject_meta, subject_id, clips_folder, recordings_folder):
     print(f'Generating clips for subject {subject_id}...')
 
     # first we need the start and end timepoints of each epoch (in frames)
@@ -23,7 +24,7 @@ def generate_clips(subject_epochs, subject_meta, subject_id):
 
     # now we need to load the video
     video_filename = subject_meta['movie_filename'].iloc[0]
-    path_to_video_file = os.path.join(paths_resting_state['recordings_folder'], video_filename)
+    path_to_video_file = os.path.join(recordings_folder, video_filename)
 
     # open the video and check if it is actually opened
     cap = cv2.VideoCapture(path_to_video_file)
@@ -44,10 +45,7 @@ def generate_clips(subject_epochs, subject_meta, subject_id):
             print(f"Warning: End time for clip {i+1} is beyond video length. Using last frame instead.")
             end_frame = frame_count - 1
 
-        output_file = os.path.join(
-            paths_resting_state['video_analysis_output'], 'clips',
-            f"{subject_id}_resting_cluster_epoch_{epoch_indexes[i]}.mp4"
-        )
+        output_file = os.path.join(clips_folder, f"{subject_id}_resting_cluster_epoch_{epoch_indexes[i]}.mp4")
         out = cv2.VideoWriter(output_file, cv2.VideoWriter_fourcc(*'mp4v'), fps, (frame_width, frame_height))
 
         cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
@@ -69,14 +67,19 @@ def generate_clips(subject_epochs, subject_meta, subject_id):
 
 
 def main():
-    metadata_df = pd.read_excel(paths_resting_state["metadata"])
+    resting_state_metadata = select_file("Select the resting-state experiment EDF metadata file")
+    epochs_folder = select_folder("Select the folder holding the resting-state epoch files")
+    clips_folder = select_folder("Select the folder holding the clips that need to be scored")
+    recordings_folder = select_folder("Select the folder holding the resting-state experiment recordings")
+
+    metadata_df = pd.read_excel(resting_state_metadata)
 
     for i, subject_id in enumerate(metadata_df['mouseId']):
 
         subject_meta = metadata_df[metadata_df['mouseId'] == int(subject_id)]
 
         # load this subject's epochs (which include the cluster annotations in the metadata)
-        subject_epochs_path = os.path.join(paths_resting_state['epochs_folder'], f'filtered_epochs_w_clusters_{subject_id}-epo.fif')
+        subject_epochs_path = os.path.join(epochs_folder, f'filtered_epochs_w_clusters_{subject_id}-epo.fif')
 
         if not os.path.exists(subject_epochs_path):
             print(f"No epoch file with clustering annotation found for subject {subject_id}, proceeding..")
@@ -84,7 +87,7 @@ def main():
 
         subject_epochs = mne.read_epochs(subject_epochs_path)
 
-        all_clips = os.listdir(os.path.join(paths_resting_state['video_analysis_output'], 'clips'))
+        all_clips = os.listdir(clips_folder)
         if any(str(subject_id) in file for file in all_clips):
             print(f"Clips have probably already been generated for subject {subject_id}, proceeding..")
             continue
@@ -94,7 +97,7 @@ def main():
         resting_state_epochs = subject_epochs[subject_epochs.metadata['cluster'] == resting_state_cluster_id]
 
         # generate the movie clips
-        generate_clips(resting_state_epochs, subject_meta, subject_id)
+        generate_clips(resting_state_epochs, subject_meta, subject_id, clips_folder, recordings_folder)
 
         print(f"Subject {subject_id} complete. Total progress: {round( (i+1) / len(metadata_df['mouseId']) * 100)}%.")
     print("Done, bye.")

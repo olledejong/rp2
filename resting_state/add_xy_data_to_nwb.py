@@ -1,14 +1,13 @@
 """
 Adds spatial information about the mouse to the right nwb file
 """
-import os
 import numpy as np
 import pandas as pd
 import ndx_events
 from pynwb import NWBHDF5IO, TimeSeries
 from pynwb.behavior import SpatialSeries
 
-from resting_state.settings import paths_resting_state
+from shared.helper_functions import *
 
 
 def get_coordinate_data(xy_filename):
@@ -95,8 +94,8 @@ def generate_module_components(data):
 
 
 def main():
-    nwb_folder = paths_resting_state['nwb_files_folder']
-    coordinates_folder = paths_resting_state['coordinate_data_folder']
+    nwb_folder = select_folder("Select the folder to hold the NWB files")
+    coordinates_folder = select_folder("Select the folder that holds the from EthoVision exported movement (xy) data")
 
     # loop over all created NWB files
     nwb_files = os.listdir(nwb_folder)

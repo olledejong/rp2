@@ -4,7 +4,6 @@ Filter EEG data and create NWB files
 import mne
 import numpy as np
 import pandas as pd
-import three_chamber.settings as three_camber_settings
 
 from datetime import datetime
 from dateutil import tz
@@ -18,7 +17,6 @@ from shared.helper_functions import *
 from shared.eeg_filtering_functions import filter_eeg
 from settings_general import *
 from three_chamber.settings import *
-from resting_state.settings import *
 
 
 def create_nwb_file(ses_descr, start_t, id, ses_id, arena):
@@ -283,7 +281,7 @@ def main():
 
         # if a NWB file already exists for this animal
         if os.path.isfile(os.path.join(nwb_output_folder, f'{identifier}.nwb')):
-            print(f"File {identifier} already exits, continuing..")
+            print(f"File {identifier}.nwb already exits, continuing!\n")
             continue  # skip creating nwb if already exists
 
         # add all kinds of data to the nwb file
