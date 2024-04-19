@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 from pynwb import NWBHDF5IO
 
-from shared.eeg_epoching_functions import adjust_fps, get_first_ttl_offset
+from shared.eeg_video_alignment_functions import adjust_fps, get_first_ttl_offset
 from shared.nwb_retrieval_functions import get_filtered_eeg, get_package_loss
 from resting_state.settings import paths_resting_state
 

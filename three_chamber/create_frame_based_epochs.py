@@ -6,7 +6,7 @@ from pynwb import NWBHDF5IO
 
 from shared.helper_functions import *
 from settings import subject_id_dict, min_interaction_duration
-from shared.eeg_epoching_functions import adjust_fps, get_first_ttl_offset
+from shared.eeg_video_alignment_functions import adjust_fps, get_first_ttl_offset
 
 
 def merge_event_rows(beh_data):
@@ -96,10 +96,15 @@ def get_epochs(beh_data_subset, eeg_signal, adjusted_video_fps, offset, s_freq):
 
 
 def main():
-    nwb_folder = select_folder("Select the folder holding your 3-chamber experiment NWB files")
-    experiment_metadata = select_file("Select the experiment's metadata file")
-    behaviour_data = select_folder("Select the experiment's behaviour data folder")
-    video_analysis_folder = select_folder("Select the folder that holds the video analysis output (ROI df, pickle folder, etc)")
+    # nwb_folder = select_folder("Select the folder holding your 3-chamber experiment NWB files")
+    # experiment_metadata = select_file("Select the experiment's metadata file")
+    # behaviour_data = select_folder("Select the experiment's behaviour data folder")
+    # video_analysis_folder = select_folder("Select the folder that holds the video analysis output (ROI df, pickle folder, etc)")
+
+    nwb_folder = "/Users/olledejong/Documents/MSc_Biology/ResearchProject2/rp2_data/3C_sociability/output/nwb"
+    experiment_metadata = "/Users/olledejong/Documents/MSc_Biology/ResearchProject2/rp2_data/3C_sociability/output/3c_sociability_metadata.xlsx"
+    behaviour_data = "/Users/olledejong/Documents/MSc_Biology/ResearchProject2/rp2_data/3C_sociability/input/behavioural_data"
+    video_analysis_folder = "/Users/olledejong/Documents/MSc_Biology/ResearchProject2/rp2_data/3C_sociability/output/videos"
 
     experiment_meta = pd.read_excel(experiment_metadata)
 
