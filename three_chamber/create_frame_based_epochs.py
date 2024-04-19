@@ -96,15 +96,10 @@ def get_epochs(beh_data_subset, eeg_signal, adjusted_video_fps, offset, s_freq):
 
 
 def main():
-    # nwb_folder = select_folder("Select the folder holding your 3-chamber experiment NWB files")
-    # experiment_metadata = select_file("Select the experiment's metadata file")
-    # behaviour_data = select_folder("Select the experiment's behaviour data folder")
-    # video_analysis_folder = select_folder("Select the folder that holds the video analysis output (ROI df, pickle folder, etc)")
-
-    nwb_folder = "/Users/olledejong/Documents/MSc_Biology/ResearchProject2/rp2_data/3C_sociability/output/nwb"
-    experiment_metadata = "/Users/olledejong/Documents/MSc_Biology/ResearchProject2/rp2_data/3C_sociability/output/3c_sociability_metadata.xlsx"
-    behaviour_data = "/Users/olledejong/Documents/MSc_Biology/ResearchProject2/rp2_data/3C_sociability/input/behavioural_data"
-    video_analysis_folder = "/Users/olledejong/Documents/MSc_Biology/ResearchProject2/rp2_data/3C_sociability/output/videos"
+    nwb_folder = select_folder("Select the folder holding your 3-chamber experiment NWB files")
+    experiment_metadata = select_file("Select the experiment's metadata file")
+    behaviour_data = select_folder("Select the experiment's behaviour data folder")
+    video_analysis_folder = select_folder("Select the folder that holds the video analysis output (ROI df, pickle folder, etc)")
 
     experiment_meta = pd.read_excel(experiment_metadata)
 
@@ -117,12 +112,9 @@ def main():
             nwb = io.read()
 
             filtered_eeg = nwb.acquisition['filtered_EEG'].data[:].T
-            filtering = nwb.acquisition['filtered_EEG'].filtering
-            locations = nwb.electrodes.location.data[:]  # get all electrode locations (1-d array)
             s_freq = nwb.acquisition['filtered_EEG'].rate  # sampling frequency of the EEG
             eeg_ttl_onsets_secs = list(nwb.acquisition["TTL_1"].timestamps)
             subject_id = nwb.subject.subject_id  # subject id
-            genotype = nwb.subject.genotype  # genotype of the subject
 
         # get the batch_cage combination name to retrieve the correct behaviour data
         batch_cage = [key for key, value in subject_id_dict.items() if value == int(subject_id)][0]
