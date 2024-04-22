@@ -6,29 +6,24 @@ import numpy as np
 from pynwb import NWBHDF5IO
 
 
-def get_filtered_eeg(nwb_file_path, segment=(0, -1), channel_names=True):
+def get_eeg(nwb_file_path, eeg_type, segment=(0, -1), channel_names=True):
     """
-    Retrieves filtered EEG data from a nwb_file (either complete or based on segment)
-    Returns array (1D-array with filtered EEG samples)
-    or
-    dict:
-        keys: electrode brain locations
-        values: 1D-array with filtered EEG samples,
+    Handy function that retrieves either the raw or filtered EEG data from a NWB file.
+
+    :param nwb_file_path:
+    :param eeg_type: either 'filtered_EEG' or 'raw_EEG' --> determines which is retrieved
+    :param segment:
+    :param channel_names:
+    :return:
     """
     with NWBHDF5IO(nwb_file_path, "r") as io:
         nwb = io.read()
-        filtered_eeg = nwb.acquisition['filtered_EEG'].data[segment[0]: segment[1]].T
+
+        eeg = nwb.acquisition[eeg_type].data[segment[0]: segment[1]].T
         if not channel_names:
-            return filtered_eeg
+            return eeg
 
-        # if channel names (e.g. OFC_R, etc) are requested
-        channel_data = {}
-        locations = nwb.electrodes.location.data[:]
-
-        for signal, location in zip(filtered_eeg, locations):
-            channel_data[location] = signal
-
-        return channel_data
+        return eeg, nwb.electrodes.location.data[:]  # return eeg segment and also channel info
 
 
 def get_package_loss(nwb_filepath, segment, locations, filtering):
