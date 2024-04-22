@@ -12,7 +12,7 @@ import pandas as pd
 from pynwb import NWBHDF5IO
 
 from shared.eeg_video_alignment_functions import adjust_fps, get_first_ttl_offset
-from shared.nwb_retrieval_functions import get_filtered_eeg, get_package_loss
+from shared.nwb_retrieval_functions import get_eeg, get_package_loss
 from resting_state.settings import paths_resting_state
 
 
@@ -177,19 +177,22 @@ def epoch_eeg_fixed(nwb_file, epoch_length=5.0, ploss_threshold=500):
         start_end_tps_f.append(f"{frame_start}-{frame_end}")
 
         # get the filtered eeg belonging to this epoch, and get the package loss in this epoch
-        filtered_eeg_epoch = get_filtered_eeg(nwb_file_path, (epoch_start, epoch_end), True)
+        filtered_eeg_epoch, chans = get_eeg(
+            nwb_file_path, 'filtered_EEG', (epoch_start, epoch_end), True
+        )
         ploss, _ = get_package_loss(nwb_file_path, (epoch_start, epoch_end), locations, filtering)
 
-        # loop through the eeg data per channel for this epoch
-        for channel, eeg in filtered_eeg_epoch.items():
+        # loop through the chans and get the eeg data for that chan
+        for idx, chan in enumerate(chans):
+            eeg = filtered_eeg_epoch[idx, :]
             # skip epochs that are not of length 'samples_per_epoch'
             if len(eeg) != samples_per_epoch:
                 continue
             # add this epoch's eeg data for the looped channel to the dictionary
-            epochs_per_chan[channel][nth_epoch] = eeg
+            epochs_per_chan[chan][nth_epoch] = eeg
 
             # if there's too much packages loss in this channel, tag this epoch as 'bad'
-            if np.sum(np.isnan(ploss[channel])) > int(s_freq * ploss_threshold / 1000):
+            if np.sum(np.isnan(ploss[chan])) > int(s_freq * ploss_threshold / 1000):
                 good_epochs[nth_epoch] = False
 
         print('\r', f"{round(nth_epoch / len(epoch_start_points) * 100, 1)}% done..", end='')
