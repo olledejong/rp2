@@ -7,13 +7,12 @@ import cv2
 import mne
 import sys
 import numpy as np
-import pandas as pd
 
-from resting_state.settings import cluster_annotations
+from resting_state.settings import *
 from shared.helper_functions import *
 
 
-def generate_clips(subject_epochs, subject_meta, subject_id, clips_folder, recordings_folder):
+def generate_clips(subject_epochs, subject_id, clips_folder, recordings_folder):
     print(f'Generating clips for subject {subject_id}...')
 
     # first we need the start and end timepoints of each epoch (in frames)
@@ -23,7 +22,7 @@ def generate_clips(subject_epochs, subject_meta, subject_id, clips_folder, recor
     epoch_indexes = np.array(subject_epochs.metadata.index)
 
     # now we need to load the video
-    video_filename = subject_meta['movie_filename'].iloc[0]
+    video_filename = movie_subjects_dict[int(subject_id)]
     path_to_video_file = os.path.join(recordings_folder, video_filename)
 
     # open the video and check if it is actually opened
@@ -67,19 +66,18 @@ def generate_clips(subject_epochs, subject_meta, subject_id, clips_folder, recor
 
 
 def main():
-    resting_state_metadata = select_file("Select the resting-state experiment EDF metadata file")
     epochs_folder = select_folder("Select the folder holding the resting-state epoch files")
     clips_folder = select_folder("Select the folder holding the clips that need to be scored")
     recordings_folder = select_folder("Select the folder holding the resting-state experiment recordings")
 
-    metadata_df = pd.read_excel(resting_state_metadata)
+    for i, file in os.listdir(epochs_folder):
+        if not file.startswith('filtered_epochs_w_clusters_'):
+            continue
 
-    for i, subject_id in enumerate(metadata_df['mouseId']):
-
-        subject_meta = metadata_df[metadata_df['mouseId'] == int(subject_id)]
+        subject_id = file.rsplit('_', 1)[-1].split('-')[0]
 
         # load this subject's epochs (which include the cluster annotations in the metadata)
-        subject_epochs_path = os.path.join(epochs_folder, f'filtered_epochs_w_clusters_{subject_id}-epo.fif')
+        subject_epochs_path = os.path.join(epochs_folder, file)
 
         if not os.path.exists(subject_epochs_path):
             print(f"No epoch file with clustering annotation found for subject {subject_id}, proceeding..")
@@ -97,11 +95,11 @@ def main():
         resting_state_epochs = subject_epochs[subject_epochs.metadata['cluster'] == resting_state_cluster_id]
 
         # generate the movie clips
-        generate_clips(resting_state_epochs, subject_meta, subject_id, clips_folder, recordings_folder)
+        generate_clips(resting_state_epochs, subject_id, clips_folder, recordings_folder)
 
-        print(f"Subject {subject_id} complete. Total progress: {round( (i+1) / len(metadata_df['mouseId']) * 100)}%.")
-    print("Done, bye.")
+        print(f"Subject {subject_id} complete.")
 
 
 if __name__ == '__main__':
     main()
+    print("Done!")
