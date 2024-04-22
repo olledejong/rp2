@@ -12,7 +12,16 @@ subject_id_dict = {
     'batch1_cage4': 78244, 'batch2_cage4': 79602, 'batch5_cage4': 81193,
 }
 
-min_interaction_duration = 1.0  # minimum duration of the interaction between mouse and cup (in seconds)
+# minimum duration of the interaction between mouse and cup (in seconds)
+min_interaction_duration = 1.0
+
+# the desired epoch length the interactions will be divided into
+desired_epoch_length = 1.0
+
+# the maximum percentage (as a fraction) of information duplication between epochs we allow
+# this would mean that with a cutoff of 50% (epoch_overlap_cutoff=0.5), an interaction of duration 1.4 would yield one
+# epoch of 1 second (60.0% duplication), i.e. the 0.4 seconds of data is deleted.
+epoch_overlap_cutoff = 0.5
 
 paths_3c_sociability = {
     "metadata": "/Users/olledejong/Documents/MSc_Biology/ResearchProject2/rp2_data/3C_sociability/output/3c_sociability_metadata.xlsx",
