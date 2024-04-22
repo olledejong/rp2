@@ -13,19 +13,7 @@ from pynwb import NWBHDF5IO
 
 from shared.eeg_video_alignment_functions import adjust_fps, get_first_ttl_offset
 from shared.nwb_retrieval_functions import get_eeg, get_package_loss
-from resting_state.settings import paths_resting_state
-
-
-def get_subject_metadata(metadata_path, subject_id):
-    """
-    Retrieves the metadata dataframe for the given subject
-
-    :param metadata_path:
-    :param subject_id:
-    :return:
-    """
-    metadata_df = pd.read_excel(metadata_path)
-    return metadata_df[metadata_df['mouseId'] == subject_id]
+from resting_state.settings import *
 
 
 def get_led_onset_data(video_analysis_output_dir, movie_filename):
@@ -134,11 +122,10 @@ def epoch_eeg_fixed(nwb_file, epoch_length=5.0, ploss_threshold=500):
         subject_id = nwb.subject.subject_id  # subject id
         genotype = nwb.subject.genotype  # genotype of the subject
 
-    metadata_path, video_analysis_output_dir = paths_resting_state["metadata"], paths_resting_state["video_analysis_output"]
+    video_analysis_output_dir = paths_resting_state["video_analysis_output"]
 
-    # get the subject's metadata from the file (holds video filename that points to right LED states)
-    subject_metadata = get_subject_metadata(metadata_path, int(subject_id))
-    movie_filename = subject_metadata["movie_filename"].iloc[0]  # movie filename the subject's in
+    # get the video filename this subject is recorded in -- it points to right LED states in the led-states dict
+    movie_filename = movie_subjects_dict[int(subject_id)]
 
     # get the LED states for this subject (i.e. get the LED states of the correct video)
     # and then get the frames where the LED turned ON (i.e. get all boolean event changes from OFF to ON (0 to 1)
