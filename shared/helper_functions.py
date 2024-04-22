@@ -3,15 +3,15 @@ File that contains helper functions
 """
 import os
 import glob
-from tkinter import Tk, filedialog
-
 import matplotlib.pyplot as plt
+
+from tkinter import Tk, filedialog
 
 
 def get_all_edf_files(root_dir):
     """
     Finds all .edf files. Works for edf files located in the root of the path, but
-    also for all nested edf files
+    also for all nested edf files. Skips the 'trash_recordings' folder.
 
     :param root_dir:
     :return:
@@ -32,6 +32,11 @@ def create_dir_if_not_exists(directory):
 def save_figure(path, bbox_inches='tight', dpi=300):
     """
     Custom function that lets you save a figure and creates the directory where necessary
+
+    :param path: path to save to (including filename)
+    :param bbox_inches:
+    :param dpi:
+    :return:
     """
     directory, filename = os.path.split(path)
     if directory == '':
@@ -46,6 +51,8 @@ def save_figure(path, bbox_inches='tight', dpi=300):
     plt.savefig(save_path, bbox_inches=bbox_inches, dpi=dpi)
     plt.close()
 
+
+# Tkinter functions used to request file/folder locations from the user
 
 def select_folder(title):
     root = Tk()
