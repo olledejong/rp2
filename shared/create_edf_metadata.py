@@ -4,6 +4,7 @@ This file is used to generate unique metadata for an experiment. This metadata f
 the EDF file (EEG data) that belongs to that subject.
 """
 import re
+import sys
 import pandas as pd
 from shared.helper_functions import *
 
@@ -23,8 +24,12 @@ def generate_experiment_metadata():
         _, filename = os.path.split(filename)
 
         # extract specific info from filename
-        _, transmitterId, subjectId, mouseName, date, time, sesId, _ = re.split('_', filename)
-        subjectId, mouseName = str(subjectId), str(mouseName)
+        try:
+            _, transmitterId, subjectId, mouseName, date, time, sesId, _ = re.split('_', filename)
+            subjectId, mouseName = str(subjectId), str(mouseName)
+        except ValueError:
+            sys.exit('Error: make sure the EDF file names are in the correct format. Split on underscores, there should'
+                     ' be eight (8) parts: TAINI_$TransmID_$SubID_$ALIAS_%Y-%m-%d_%H-%M-%S_$SesID_$INC.edf')
 
         other_animal_info = sub_meta[sub_meta['mouseId'] == subjectId]
 
