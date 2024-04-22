@@ -292,7 +292,7 @@ def main():
 
         with NWBHDF5IO(f'{nwb_output_folder}/{identifier}.nwb', 'w') as io:
             io.write(nwb)
-        print(f"Saved file, {round(i / len(edf_files) * 100)}% done\n")
+        print(f"Saved file, {round((i + 1) / len(edf_files) * 100)}% done\n")
 
         # clean up
         raw.close()
