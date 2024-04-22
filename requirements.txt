@@ -74,13 +74,13 @@ libclang==16.0.6
 Markdown==3.6
 markdown-it-py==3.0.0
 MarkupSafe==2.1.3
-matplotlib==3.8.2
+matplotlib==3.8.4
 matplotlib-inline==0.1.6
 mdurl==0.1.2
 mistune==3.0.2
 ml-dtypes==0.3.2
 mne==1.6.1
-mne-connectivity==0.6.0
+mne-connectivity @ https://api.github.com/repos/mne-tools/mne-connectivity/zipball/main#sha256=3d1d008bf0ed0bc2cbff0ef5e593b015b5f20fee47cf60b6bfe14bf5dcbbc6cd
 namex==0.0.7
 nbclient==0.9.0
 nbconvert==7.14.2
@@ -90,13 +90,13 @@ nest-asyncio==1.6.0
 netCDF4==1.6.5
 notebook==7.0.7
 notebook_shim==0.2.3
-numpy==1.26.3
+numpy==1.26.4
 opencv-python==4.9.0.80
 openpyxl==3.1.2
 opt-einsum==3.3.0
 overrides==7.6.0
 packaging==23.2
-pandas==2.1.4
+pandas==2.2.2
 pandocfilters==1.5.1
 parso==0.8.3
 persim==0.3.5
@@ -134,7 +134,7 @@ ruamel.yaml==0.18.5
 ruamel.yaml.clib==0.2.8
 scikit-learn==1.4.1.post1
 scikit-tda==1.0.0
-scipy==1.11.4
+scipy==1.13.0
 seaborn==0.13.2
 Send2Trash==1.8.2
 six==1.16.0
@@ -145,6 +145,7 @@ tadasets==0.0.4
 tenacity==8.2.3
 tensorboard==2.16.2
 tensorboard-data-server==0.7.2
+tensorflow-io-gcs-filesystem==0.36.0
 termcolor==2.4.0
 terminado==0.18.0
 texttable==1.7.0

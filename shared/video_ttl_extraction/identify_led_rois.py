@@ -9,6 +9,9 @@ import pandas as pd
 from tkinter import filedialog
 from tkinter import Tk
 
+from settings_general import *
+from three_chamber.settings import *
+
 
 def get_folder_path():
     """
@@ -63,7 +66,7 @@ def select_new_roi(frame, old_roi):
     return r
 
 
-def save_led_rois(folder_path):
+def save_led_rois(folder_path, paths):
     """
     Loops through video files in the folder selected through Tkinter and lets the user
     select a ROI. Each video results in an entry into a dataframe, which is eventually
@@ -101,9 +104,9 @@ def save_led_rois(folder_path):
         cv2.destroyAllWindows()
 
     df = pd.DataFrame(data)
-    df.to_excel(os.path.join(folder_path, 'video_rois.xlsx'), index=False)
+    df.to_excel(os.path.join(paths['video_analysis_output'], 'video_rois.xlsx'), index=False)
 
 
 if __name__ == "__main__":
     video_folder_path = get_folder_path()
-    save_led_rois(video_folder_path)
+    save_led_rois(video_folder_path, )  # TODO set second argument to paths variable of experiment of choice

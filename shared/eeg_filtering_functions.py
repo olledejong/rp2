@@ -27,7 +27,7 @@ def interpolate_nan(padata, pkind='linear'):
 
 # Define general functions
 # noinspection PyTupleAssignmentBalance
-def filtering(x, s_freq, lp=0.5, hp=200, lower_val=0.006, higher_val=0.013, art=3):
+def filter_eeg(x, s_freq, lcut=0.5, hcut=200, lower_val=0.006, higher_val=0.013, art=3):
     """
     Filters the EEG signal.
 
@@ -41,8 +41,8 @@ def filtering(x, s_freq, lp=0.5, hp=200, lower_val=0.006, higher_val=0.013, art=
     Returns filtered EEG signal
     :param x: unfiltered data
     :param s_freq: sampling frequency
-    :param lp: lower limit of desired band / filter (to be normalized)
-    :param hp: upper limit of desired bad / filter (to be normalized)
+    :param lcut: lower limit of desired band / filter (to be normalized)
+    :param hcut: upper limit of desired bad / filter (to be normalized)
     :param lower_val: lower value used for removal of artifacts caused by package loss
     :param higher_val: higher value used for removal of artifacts caused by package loss
     :param art: std of the signal is multiplied by this value to filter out additional artifacts
@@ -55,7 +55,7 @@ def filtering(x, s_freq, lp=0.5, hp=200, lower_val=0.006, higher_val=0.013, art=
     rej = interpolate_nan(rej, pkind='linear')
 
     # filter by applying a 5th Order Bandpass Butterworth Filter
-    b, a = signal.butter(N=5, Wn=[lp / (s_freq / 2), hp / (s_freq / 2)], btype='bandpass')
+    b, a = signal.butter(N=5, Wn=[lcut / (s_freq / 2), hcut / (s_freq / 2)], btype='bandpass')
     rej = signal.filtfilt(b, a, rej)
 
     # if art is provided as argument (int), perform artifact rejection based on art * std

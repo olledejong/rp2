@@ -2,14 +2,13 @@
 This file can be used to score clips from experiment recordings that were generated using the
 'generate_epoch_clips.py' script.
 """
-import os
 import cv2
 import mne
 import numpy as np
 import pandas as pd
-from tkinter import *
 
-from settings import paths, cluster_annotations, omitted_after_clustering, omitted_other
+from resting_state.settings import omitted_other, omitted_after_clustering, cluster_annotations
+from shared.helper_functions import *
 
 
 def score_epoch_clip(input_video, epoch_n, subject_id):
@@ -60,14 +59,14 @@ def score_epoch_clip(input_video, epoch_n, subject_id):
     return behaviour
 
 
-def score_epoch_clips(subject_clips, subject_id):
+def score_epoch_clips(subject_clips, subject_id, clips_folder):
     print("To score each clip, press one of the following keys: 1 for resting, and 2 for sleeping, and 3 for other.")
 
     behaviours = []
 
     # loop through all subject's clips
     for clip_filename in subject_clips:
-        path_to_clip = os.path.join(paths['video_analysis_output'], 'clips', clip_filename)
+        path_to_clip = os.path.join(clips_folder, clip_filename)
         epoch_n = path_to_clip.split("_")[-1].split(".")[0]
 
         # save this clip's behaviour label
@@ -78,7 +77,11 @@ def score_epoch_clips(subject_clips, subject_id):
 
 
 def main():
-    metadata_df = pd.read_excel(paths["metadata"])
+    resting_state_metadata = select_file("Select the resting-state experiment EDF metadata file")
+    epochs_folder = select_folder("Select the folder holding the resting-state epoch files")
+    clips_folder = select_folder("Select the folder holding the clips that need to be scored")
+
+    metadata_df = pd.read_excel(resting_state_metadata)
 
     for i, subject_id in enumerate(metadata_df['mouseId']):
 
@@ -93,7 +96,7 @@ def main():
                   f'proceeding..')
             continue
 
-        annotated_epoch_files = os.listdir(paths['epochs_folder'])
+        annotated_epoch_files = os.listdir(epochs_folder)
         if any(str(subject_id) in file for file in annotated_epoch_files if file.startswith('resting_epochs_man')):
             print(f'Clips for subject {subject_id} have already been scored, proceeding..')
             continue
@@ -104,7 +107,7 @@ def main():
         print(f'Subject id: {subject_id}, Mouse name: {subject_meta["mouseName"].iloc[0]}')
 
         # get the filenames of this subject's clips
-        clips = os.listdir(os.path.join(paths['video_analysis_output'], 'clips'))
+        clips = os.listdir(clips_folder)
         subject_clips = [clip for clip in clips if str(subject_id) in clip]
         # make sure the clips are sorted such that they align with the epochs in the epoch object/metadata
         subject_clips = sorted(subject_clips, key=lambda x: int(x.split("_")[-1].split(".")[0]))
@@ -112,7 +115,7 @@ def main():
         # LOAD THE EPOCHS FOR THIS SUBJECT #
 
         epochs = mne.read_epochs(
-            os.path.join(paths['epochs_folder'], f"filtered_epochs_w_clusters_{subject_id}-epo.fif"),
+            os.path.join(epochs_folder, f"filtered_epochs_w_clusters_{subject_id}-epo.fif"),
             preload=True
         )
         # get the resting-state cluster epochs
@@ -129,13 +132,13 @@ def main():
 
         # SCORE THE CLIPS AND STORE THE ANNOTATIONS IN THE METADATA OF THE EPOCHS #
 
-        man_annotations = score_epoch_clips(subject_clips, subject_id)
+        man_annotations = score_epoch_clips(subject_clips, subject_id, clips_folder)
 
         resting_epochs.metadata['behaviour'] = man_annotations
 
         # save resting-state epochs with manual annotations
         resting_epochs.save(
-            os.path.join(paths['epochs_folder'], f"resting_epochs_man_annotated_{subject_id}-epo.fif"),
+            os.path.join(epochs_folder, f"resting_epochs_man_annotated_{subject_id}-epo.fif"),
             overwrite=True
         )
 
