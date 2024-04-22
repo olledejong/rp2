@@ -1,6 +1,8 @@
 """
 Filter EEG data and create NWB files
 """
+import re
+import sys
 import mne
 import numpy as np
 import pandas as pd
@@ -19,15 +21,12 @@ from settings_general import *
 from three_chamber.settings import *
 
 
-def create_nwb_file(ses_descr, start_t, id, ses_id, arena):
+def create_nwb_file(metadata, experiment_name):
     """
     Creates the initial NWB file. Does not hold any electrode or EEG data yet.
 
-    :param ses_descr:
-    :param start_t:
-    :param id:
-    :param ses_id:
-    :param arena:
+    :param metadata:
+    :param experiment_name:
     :return:
     """
     # load some project information from the settings_general.py file
@@ -35,52 +34,69 @@ def create_nwb_file(ses_descr, start_t, id, ses_id, arena):
     institution = general['institution']
     lab = general['lab']
 
+    # prepare some metadata
+    session_description = f'Animal {metadata["mouseId"]} in {experiment_name} experiment'
+    start_time = datetime.strptime(
+        '-'.join([metadata['date'], metadata['time']]),
+        '%Y-%m-%d-%H-%M-%S'
+    ).replace(tzinfo=tz.tzlocal())
+
+    identifier = f'{experiment_name}_{metadata["mouseId"]}'
+    session_id = f'{metadata["mouseId"]}_{metadata["sesId"]}'
+    arena = f'Arena_{metadata["arena"]}'
+
     nwb = NWBFile(
-        session_description=ses_descr,
-        identifier=id,
-        session_start_time=start_t,
-        session_id=ses_id,
+        session_description=session_description,
+        identifier=identifier,
+        session_start_time=start_time,
+        session_id=session_id,
         experiment_description=arena,
         experimenter=experimenter,
         lab=lab,
-        institution=institution
+        institution=institution,
+
     )
     print('Created initial NWB')
     return nwb
 
 
-def load_metadata(edf_file, experiment_edf_metadata):
+def load_metadata(edf_filename, all_animals_metadata):
     """
-    Load EDF metadata file and return the needed information
+    Function that combines metadata from the EDF filename and from a metadata file that holds
+    supplementary metadata (genotype, birthday etc.)
 
-    :param edf_file:
-    :param experiment_edf_metadata:
+    :param edf_filename:
+    :param all_animals_metadata:
     :return:
     """
-    # Load metadata file
-    _, filename = os.path.split(experiment_edf_metadata)
-    experiment_name = filename.rsplit('_', 1)[0]
-    metadata = pd.read_excel(experiment_edf_metadata, dtype={'mouseName': str, 'mouseId': str})
+    # extract specific info from filename, if not correctly formatted, report to user and exit
+    try:
+        _, filename = os.path.split(edf_filename)
+        _, transmitterId, subjectId, mouseName, date, time, sesId, _ = re.split('_', filename)
+        subjectId, mouseName = str(subjectId), str(mouseName)
+    except ValueError as err:
+        sys.exit('Error: make sure the EDF file names are in the correct format. Split on underscores, there should'
+                 ' be eight (8) parts: TAINI_$TransmID_$SubID_$ALIAS_%Y-%m-%d_%H-%M-%S_$SesID_$INC.edf')
 
-    # Get metadata info
-    directory, filename = os.path.split(edf_file)
-    info = metadata[metadata['edf'] == filename].to_dict(orient='records')[0]
+    # extract info from all animal metadata file and form a dict that holds all subject metadata
+    metadata = {
+        'edf_filename': filename,
+        'date': date,
+        'time': time,
+        'sesId': sesId,
+        'mouseId': subjectId,
+        'mouseName': mouseName,
+        'transmitterId': transmitterId,
+        'arena': all_animals_metadata[all_animals_metadata['mouseId'] == subjectId]['arena'].iloc[0],
+        'genotype': all_animals_metadata[all_animals_metadata['mouseId'] == subjectId]['genotype'].iloc[0],
+        'birthday': all_animals_metadata[all_animals_metadata['mouseId'] == subjectId]['birthday'].iloc[0],
+        'rfid': all_animals_metadata[all_animals_metadata['mouseId'] == subjectId]['RFID'].iloc[0],
+        'weight': all_animals_metadata[all_animals_metadata['mouseId'] == subjectId]['weight'].iloc[0],
+        'sex': all_animals_metadata[all_animals_metadata['mouseId'] == subjectId]['sex'].iloc[0],
+        'species': all_animals_metadata[all_animals_metadata['mouseId'] == subjectId]['species'].iloc[0],
+    }
 
-    # Prep NWB file metadata
-    session_description = f"Animal {info['mouseId']} in {experiment_name} experiment"
-    start_time = datetime.strptime(
-        '-'.join([info['date'], info['time']]),
-        '%Y-%m-%d-%H-%M-%S'
-    ).replace(tzinfo=tz.tzlocal())
-
-    identifier = f'{experiment_name}_{info["mouseId"]}'
-    session_id = f'{info["mouseId"]}_{info["sesId"]}'
-    arena = f'Arena_{info["arena"]}'
-
-    # create NWB file using metadata
-    nwb = create_nwb_file(session_description, start_time, identifier, session_id, arena)
-
-    return info, identifier, nwb
+    return metadata
 
 
 def add_subject_info(nwb, info):
@@ -96,26 +112,26 @@ def add_subject_info(nwb, info):
         subject_id=info['mouseId'],  # unique animal id in the mouse card
         species=info['species'],
         sex=info['sex'],
-        genotype=info['genotype'],  # WT or Drd2 KO for these social experiments
+        genotype=info['genotype'],  # WT or Drd2 KO
         weight=str(info['weight']),
         date_of_birth=info['birthday'].to_pydatetime().replace(tzinfo=tz.tzlocal())
     )
     return nwb
 
 
-def add_electrode_info(nwb, info):
+def add_electrode_info(nwb, transmitter_id):
     """
     Adds the electrode information to the NWB file.
     :param nwb:
-    :param info:
+    :param transmitter_id:
     :return:
     """
     electrode_info = filtering['electrode_info']
 
     # Add device and electrode information
     device = nwb.create_device(
-        name=str(info['transmitterId']),
-        description=str(info['transmitterId']),
+        name=transmitter_id,
+        description=transmitter_id,
         manufacturer='TaiNi'
     )
 
@@ -153,8 +169,6 @@ def add_eeg_data(nwb, file):
     :param file:
     :return:
     """
-    print('Adding EEG data')
-
     # load the electrode info from the settings file
     electrode_info = filtering['electrode_info']
 
@@ -265,9 +279,13 @@ def main():
     information on the subject, the electrodes, ttl etc. Of course also holds the raw
     and filtered EEG data.
     """
+    experiment_name = input('Experiment name (e.g. 3c_sociability or resting_state): ')
     edf_folder = select_folder("Select the folder that holds the EDF files")
     nwb_output_folder = select_or_create_folder("Select or create a folder to hold the output NWB files")
-    metadata_file = select_file("Select the experiment's metadata file")
+    all_animals_metadata = select_file("Select the excel file that holds information about all experimental animals")
+
+    # read the metadata
+    all_animals_metadata = pd.read_excel(all_animals_metadata, dtype={'mouseName': str, 'mouseId': str})
 
     # load all edf filenames or this experiment
     edf_files = get_all_edf_files(edf_folder)
@@ -276,22 +294,29 @@ def main():
     for i, file in enumerate(edf_files):
         print(f"Creating NWB with EEG data from EDF file {file.split('/')[-1]}")
 
-        # load needed information from experiment specific EDF metadata created using 'create_edf_metadata.py'
-        info, identifier, nwb = load_metadata(file, metadata_file)
+        # load needed metadata from edf filename as well as from the 'all_animals_metadata' Excel file
+        metadata = load_metadata(file, all_animals_metadata)
 
-        # if a NWB file already exists for this animal
-        if os.path.isfile(os.path.join(nwb_output_folder, f'{identifier}.nwb')):
-            print(f"File {identifier}.nwb already exits, continuing!\n")
-            continue  # skip creating nwb if already exists
+        # create the NWB file using the metadata
+        nwb = create_nwb_file(metadata, experiment_name)
+
+        # if NWB file already exists for this animal, skip it
+        nwb_filename = f'{experiment_name}_{metadata["mouseId"]}.nwb'
+        save_nwb_to = os.path.join(nwb_output_folder, nwb_filename)
+        if os.path.isfile(save_nwb_to):
+            print(f"File {nwb_filename}.nwb already exits, continuing!\n")
+            continue
 
         # add all kinds of data to the nwb file
-        nwb = add_subject_info(nwb, info)
-        nwb = add_electrode_info(nwb, info)
+        nwb = add_subject_info(nwb, metadata)
+        nwb = add_electrode_info(nwb, str(metadata['transmitterId']))
         nwb, raw = add_eeg_data(nwb, file)
         nwb = add_ttl(nwb, raw)  # we only have 1 TTL channel for the small social experiments
 
-        with NWBHDF5IO(f'{nwb_output_folder}/{identifier}.nwb', 'w') as io:
+        # save the NWB file
+        with NWBHDF5IO(save_nwb_to, 'w') as io:
             io.write(nwb)
+
         print(f"Saved file, {round((i + 1) / len(edf_files) * 100)}% done\n")
 
         # clean up
@@ -302,4 +327,4 @@ def main():
 # Starting point. Process begins here.
 if __name__ == "__main__":
     main()
-    print('Done')
+    print('Done!')
