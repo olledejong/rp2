@@ -77,13 +77,19 @@ def score_epoch_clips(subject_clips, subject_id, clips_folder):
 
 
 def main():
-    resting_state_metadata = select_file("Select the resting-state experiment EDF metadata file")
     epochs_folder = select_folder("Select the folder holding the resting-state epoch files")
     clips_folder = select_folder("Select the folder holding the clips that need to be scored")
 
-    metadata_df = pd.read_excel(resting_state_metadata)
+    # get the unique subject ids for which there are clips created
+    unique_subject_ids = []
+    clips = os.listdir(clips_folder)
+    for clip in clips:
+        subj_id = int(clip.split('_')[0])
+        if subj_id not in unique_subject_ids:
+            unique_subject_ids.append(subj_id)
 
-    for i, subject_id in enumerate(metadata_df['mouseId']):
+    # for each subject that there's clips for, score each clip and save the annotations to the epochs file
+    for i, subject_id in enumerate(unique_subject_ids):
 
         # PERFORM SANITY CHECKS #
 
@@ -103,14 +109,14 @@ def main():
 
         # GET THE CLIP FILENAMES FOR THIS SUBJECT #
 
-        subject_meta = metadata_df[metadata_df['mouseId'] == int(subject_id)]
-        print(f'Subject id: {subject_id}, Mouse name: {subject_meta["mouseName"].iloc[0]}')
+        print(f'Working with clips of subject {subject_id}')
 
-        # get the filenames of this subject's clips
-        clips = os.listdir(clips_folder)
-        subject_clips = [clip for clip in clips if str(subject_id) in clip]
-        # make sure the clips are sorted such that they align with the epochs in the epoch object/metadata
-        subject_clips = sorted(subject_clips, key=lambda x: int(x.split("_")[-1].split(".")[0]))
+        # get the filenames of this subject's clips and make sure the clips are sorted such that they align with the
+        # epochs in the epoch object/metadata
+        subject_clips = sorted(
+            [clip for clip in clips if str(subject_id) in clip],
+            key=lambda x: int(x.split("_")[-1].split(".")[0])
+        )
 
         # LOAD THE EPOCHS FOR THIS SUBJECT #
 
@@ -128,12 +134,13 @@ def main():
             missing_clips = np.setdiff1d(np.array(resting_epochs.metadata.index), np.array(clips_epoch_n))
             row_numbers = resting_epochs.metadata.index.get_indexer(missing_clips)
             resting_epochs = [epoch for i, epoch in enumerate(resting_epochs) if i not in row_numbers]
-            print(f'Removed {len(missing_clips)} epoch(s) because there was no clip. Current # epochs: {len(resting_epochs)}')
+
+            print(f'Removed {len(missing_clips)} epoch(s) because there was no clip. '
+                  f'Current # epochs: {len(resting_epochs)}')
 
         # SCORE THE CLIPS AND STORE THE ANNOTATIONS IN THE METADATA OF THE EPOCHS #
 
         man_annotations = score_epoch_clips(subject_clips, subject_id, clips_folder)
-
         resting_epochs.metadata['behaviour'] = man_annotations
 
         # save resting-state epochs with manual annotations
