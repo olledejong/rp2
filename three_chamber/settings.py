@@ -22,22 +22,3 @@ desired_epoch_length = 1.0
 # this would mean that with a cutoff of 50% (epoch_overlap_cutoff=0.5), an interaction of duration 1.4 would yield one
 # epoch of 1 second (60.0% duplication), i.e. the 0.4 seconds of data is deleted.
 epoch_overlap_cutoff = 0.5
-
-paths_3c_sociability = {
-    "metadata": "/Users/olledejong/Documents/MSc_Biology/ResearchProject2/rp2_data/3C_sociability/output/3c_sociability_metadata.xlsx",
-    "edf_folder": "/Users/olledejong/Documents/MSc_Biology/ResearchProject2/rp2_data/3C_sociability/input/edf_files",
-    "behaviour_data_dir": "/Users/olledejong/Documents/MSc_Biology/ResearchProject2/rp2_data/3C_sociability/input/behavioural_data",
-    "plots_folder": "/Users/olledejong/Documents/MSc_Biology/ResearchProject2/rp2_data/3C_sociability/output/plots",
-    "recordings_folder": "/Users/olledejong/Documents/MSc_Biology/ResearchProject2/rp2_data/3C_sociability/input/videos",
-    "video_analysis_output": "/Users/olledejong/Documents/MSc_Biology/ResearchProject2/rp2_data/3C_sociability/output/videos",
-    "nwb_files_folder": "/Users/olledejong/Documents/MSc_Biology/ResearchProject2/rp2_data/3C_sociability/output/nwb"
-}
-
-paths_3c_preference = {
-    "metadata": "/Users/olledejong/Documents/MSc_Biology/ResearchProject2/rp2_data/3C_preference/output/3c_preference_metadata.xlsx",
-    "edf_folder": "/Users/olledejong/Documents/MSc_Biology/ResearchProject2/rp2_data/3C_preference/input/edf_files",
-    "behaviour_data_dir": "/Users/olledejong/Documents/MSc_Biology/ResearchProject2/rp2_data/3C_preference/input/behavioural_data",
-    "plots_folder": "/Users/olledejong/Documents/MSc_Biology/ResearchProject2/rp2_data/3C_preference/output/plots",
-    "nwb_files_folder": "/Users/olledejong/Documents/MSc_Biology/ResearchProject2/rp2_data/3C_preference/output/nwb"
-}
-
