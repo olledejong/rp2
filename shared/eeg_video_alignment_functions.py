@@ -15,7 +15,6 @@ def get_first_ttl_offset(eeg_ttl_onsets, led_ttl_onsets, adjusted_fps, s_freq):
     :param s_freq:
     :return:
     """
-
     first_ttl_onset_secs = eeg_ttl_onsets[0] / s_freq  # scale back to seconds
     first_led_onset_secs = led_ttl_onsets[0] / adjusted_fps  # scale back to seconds using adjusted FPS
     offset_secs = first_ttl_onset_secs - first_led_onset_secs
