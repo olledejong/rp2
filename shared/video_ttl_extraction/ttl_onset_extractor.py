@@ -54,7 +54,7 @@ def get_led_states(snapshot_path, recordings_folder, rois_df):
     all_led_states = {}
 
     for index, row in rois_df.iterrows():
-        print(f"Working with video {row['Video']}.")
+        print(f"\nWorking with video {row['Video']}.")
         video_path = os.path.join(recordings_folder, row['Video'])
         roi = ast.literal_eval(row['ROI'])
         cap = cv2.VideoCapture(video_path)
