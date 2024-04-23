@@ -4,13 +4,12 @@ to the epoch object for each subject that has movement data. I.e. the epoch obje
 (within the metadata) a movement column that indicates whether the subject was moving in that
 epoch or not.
 """
-import os
 import mne
 import ndx_events
 import numpy as np
 from pynwb import NWBHDF5IO
 
-from resting_state.settings import paths_resting_state
+from shared.helper_functions import *
 
 
 def get_epoch_array(subject_id, epochs_folder):
@@ -59,8 +58,9 @@ def main():
     all epochs and saves this to the filesystem.
     :return:
     """
+    nwb_folder = select_folder("Please select the folder that holds the resting-state NWB files")
+    epochs_folder = select_folder("Please select the folder that holds the resting-state epoch files")
     resting_cutoff = 0  # number of frames of movement that is allowed in one epoch
-    nwb_folder, epochs_folder = paths_resting_state["nwb_files_folder"], paths_resting_state["epochs_folder"]
 
     all_epochs = []
     # loop through the nwb files (1 for each subject)

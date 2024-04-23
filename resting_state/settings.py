@@ -13,6 +13,13 @@ paths_resting_state = {
     "video_analysis_output": ""
 }
 
+# the desired epoch length that's used to create the fixed length epochs
+desired_epoch_length = 5.0
+
+# package-loss threshold to use (in milliseconds)
+# if there's more amount of package loss in the epoch is more than this value, the epoch is omitted
+ploss_threshold = 500
+
 resting_state_movies = [
     'drd2_batch1_resting-state Camera 1 7-7-2023 09_40_22 1.mp4',
     'drd2_batch2_resting-state Camera 1 18-8-2023 10_00_03 1.mp4',

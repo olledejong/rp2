@@ -26,7 +26,7 @@ def get_eeg(nwb_file_path, eeg_type, segment=(0, -1), channel_names=True):
         return eeg, nwb.electrodes.location.data[:]  # return eeg segment and also channel info
 
 
-def get_package_loss(nwb_filepath, segment, locations, filtering):
+def get_package_loss(nwb_filepath, segment):
     """
     Retrieves the raw EEG from the NWB file, searches and returns package loss information
     in two forms:
@@ -35,6 +35,8 @@ def get_package_loss(nwb_filepath, segment, locations, filtering):
     """
     with NWBHDF5IO(nwb_filepath, "r") as io:
         nwb = io.read()
+        filtering = nwb.acquisition['filtered_EEG'].filtering
+        locations = nwb.electrodes.location.data[:]
 
         # Parse filtering info
         f_info = re.search('low_val:(.+),.+high_val:(.+),.+art:(.+)', filtering)
