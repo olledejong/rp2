@@ -40,16 +40,17 @@ def export_frame(video_name, frame_number, frame, state, images_path):
     cv2.imwrite(save_to, frame)
 
 
-def get_led_states(video_analysis_output_folder, recordings_folder, rois_df):
+def get_led_states(snapshot_path, recordings_folder, rois_df):
     """
     For every row in the rois_df (holds the movie filename and roi info), the LED
     state is extracted and is stored. All saved info is later saved to a file.
 
+    :param recordings_folder:
+    :param snapshot_path:
     :param rois_df: every row had a filename (mp4/avi) and a ROI
     :return:
     """
-    snapshot_path = os.path.join(video_analysis_output_folder, "snapshots")
-    create_dir_if_not_exists(snapshot_path)
+
     all_led_states = {}
 
     for index, row in rois_df.iterrows():
@@ -94,25 +95,22 @@ def get_led_states(video_analysis_output_folder, recordings_folder, rois_df):
 
 
 def main():
-    video_analysis_output_folder = select_or_create_folder(
-        "Select or create folder that will hold the video analysis output"
-    )
+    video_analysis_output_folder = select_or_create_folder("Select the folder that holds the 'video_rois.xlsx' file")
     recordings_folder = select_folder("Select the folder that holds the experiment recordings")
 
-    roi_df_path = select_file("Select the excel file holding the ROIs you extracted from the experiment videos")
-
-    # create pickle save dir
-    pickle_path = os.path.join(video_analysis_output_folder, "pickle")
-    create_dir_if_not_exists(pickle_path)
-
     # read the roi dataframe created with the identify_led_rois.py script
+    roi_df_path = os.path.join(video_analysis_output_folder, 'video_rois.xlsx')
     roi_df = pd.read_excel(roi_df_path)
 
+    # create directory to store snapshots in
+    snapshot_path = os.path.join(video_analysis_output_folder, "snapshots")
+    create_dir_if_not_exists(snapshot_path)
+
     # get the LED states for all frames of every file
-    led_states = get_led_states(video_analysis_output_folder, recordings_folder, roi_df)
+    led_states = get_led_states(snapshot_path, recordings_folder, roi_df)
 
     # save the LED states for every frame of every video file
-    with open(os.path.join(pickle_path, 'led_states.pickle'), "wb") as f:
+    with open(os.path.join(video_analysis_output_folder, 'led_states.pickle'), "wb") as f:
         pickle.dump(led_states, f, pickle.HIGHEST_PROTOCOL)
 
 

@@ -6,23 +6,8 @@ their accompanying video filename.
 import os
 import cv2
 import pandas as pd
-from tkinter import filedialog
-from tkinter import Tk
 
-from settings_general import *
-from three_chamber.settings import *
-
-
-def get_folder_path():
-    """
-    Allows user to identify the folder that holds the video files to be analyzed
-
-    :return: path to selected folder
-    """
-    root = Tk()
-    root.withdraw()  # we don't want a full GUI, so keep the root window from appearing
-    folder_selected = filedialog.askdirectory()  # show an "Open" dialog box and return the path to the selected folder
-    return folder_selected
+from shared.helper_functions import select_folder, select_or_create_folder
 
 
 def draw_roi(frame, roi):
@@ -66,21 +51,22 @@ def select_new_roi(frame, old_roi):
     return r
 
 
-def save_led_rois(folder_path, paths):
+def save_led_rois(video_folder, output_folder):
     """
     Loops through video files in the folder selected through Tkinter and lets the user
     select a ROI. Each video results in an entry into a dataframe, which is eventually
     saved to the filesystem.
 
-    :param folder_path: path to the selected folder (Tkinter)
+    :param video_folder: path to the video folder
+    :param output_folder: path to output folder
     :return:
     """
-    videos = [f for f in os.listdir(folder_path) if f.endswith(('.mp4', '.avi'))]
+    videos = [f for f in os.listdir(video_folder) if f.endswith(('.mp4', '.avi'))]
     roi = None
     data = []
 
     for video in videos:
-        video_path = os.path.join(folder_path, video)
+        video_path = os.path.join(video_folder, video)
         # read first frame (we only need one for determining ROI)
         cap = cv2.VideoCapture(video_path)
         ret, frame = cap.read()
@@ -104,9 +90,10 @@ def save_led_rois(folder_path, paths):
         cv2.destroyAllWindows()
 
     df = pd.DataFrame(data)
-    df.to_excel(os.path.join(paths['video_analysis_output'], 'video_rois.xlsx'), index=False)
+    df.to_excel(os.path.join(output_folder, 'video_rois.xlsx'), index=False)
 
 
 if __name__ == "__main__":
-    video_folder_path = get_folder_path()
-    save_led_rois(video_folder_path, )  # TODO set second argument to paths variable of experiment of choice
+    video_folder_path = select_folder("Select folder containing the videos of the experiment you're working on")
+    video_analysis_output_path = select_or_create_folder("Create or select a folder to save the LED ROI Excel file to")
+    save_led_rois(video_folder_path, video_analysis_output_path)
