@@ -6,10 +6,11 @@ import numpy as np
 import pandas as pd
 from pynwb import NWBHDF5IO
 
+from settings import *
 from shared.helper_functions import *
-from settings import subject_id_dict, min_interaction_duration, desired_epoch_length, epoch_overlap_cutoff
-from shared.eeg_video_alignment_functions import adjust_fps, get_first_ttl_offset
 from shared.nwb_retrieval_functions import get_eeg
+from settings_general import subject_id_batch_cage_dict
+from shared.eeg_video_alignment_functions import adjust_fps, get_first_ttl_offset
 
 
 def merge_event_rows(beh_data):
@@ -200,7 +201,7 @@ def main():
             io.close()
 
         # get the batch_cage combination name to retrieve the correct behaviour data
-        batch_cage = [key for key, value in subject_id_dict.items() if value == int(subject_id)][0]
+        batch_cage = subject_id_batch_cage_dict[int(subject_id)]
         print(f'\nGetting {batch_cage}.xlsx file belonging to subject {subject_id}')
 
         # load the behavioural data and then merge start/stop events

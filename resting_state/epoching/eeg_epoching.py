@@ -11,9 +11,10 @@ import numpy as np
 import pandas as pd
 from pynwb import NWBHDF5IO
 
-from shared.eeg_video_alignment_functions import adjust_fps, get_first_ttl_offset
-from shared.nwb_retrieval_functions import get_eeg, get_package_loss
 from resting_state.settings import *
+from settings_general import subject_id_batch_cage_dict
+from shared.nwb_retrieval_functions import get_eeg, get_package_loss
+from shared.eeg_video_alignment_functions import adjust_fps, get_first_ttl_offset
 
 
 def get_led_onset_data(video_analysis_output_dir, movie_filename):
@@ -125,7 +126,8 @@ def epoch_eeg_fixed(nwb_file, epoch_length=5.0, ploss_threshold=500):
     video_analysis_output_dir = paths_resting_state["video_analysis_output"]
 
     # get the video filename this subject is recorded in -- it points to right LED states in the led-states dict
-    movie_filename = movie_subjects_dict[int(subject_id)]
+    batch = subject_id_batch_cage_dict[int(subject_id)].split('_')[0]
+    movie_filename = [movie for movie in resting_state_movies if batch in movie]
 
     # get the LED states for this subject (i.e. get the LED states of the correct video)
     # and then get the frames where the LED turned ON (i.e. get all boolean event changes from OFF to ON (0 to 1)

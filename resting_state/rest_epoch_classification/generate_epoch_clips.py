@@ -8,6 +8,7 @@ import mne
 import sys
 import numpy as np
 
+from settings_general import *
 from resting_state.settings import *
 from shared.helper_functions import *
 
@@ -22,8 +23,9 @@ def generate_clips(subject_epochs, subject_id, clips_folder, recordings_folder):
     epoch_indexes = np.array(subject_epochs.metadata.index)
 
     # now we need to load the video
-    video_filename = movie_subjects_dict[int(subject_id)]
-    path_to_video_file = os.path.join(recordings_folder, video_filename)
+    batch = subject_id_batch_cage_dict[int(subject_id)].split('_')[0]
+    movie_filename = [movie for movie in resting_state_movies if batch in movie]
+    path_to_video_file = os.path.join(recordings_folder, movie_filename)
 
     # open the video and check if it is actually opened
     cap = cv2.VideoCapture(path_to_video_file)

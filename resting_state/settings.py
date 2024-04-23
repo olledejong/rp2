@@ -13,27 +13,14 @@ paths_resting_state = {
     "video_analysis_output": ""
 }
 
-movie_subjects_dict = {
-    78211: 'drd2_batch1_resting-state Camera 1 7-7-2023 09_40_22 1.mp4',
-    78233: 'drd2_batch1_resting-state Camera 1 7-7-2023 09_40_22 1.mp4',
-    78227: 'drd2_batch1_resting-state Camera 1 7-7-2023 09_40_22 1.mp4',
-    78244: 'drd2_batch1_resting-state Camera 1 7-7-2023 09_40_22 1.mp4',
-    79593: 'drd2_batch2_resting-state Camera 1 18-8-2023 10_00_03 1.mp4',
-    79592: 'drd2_batch2_resting-state Camera 1 18-8-2023 10_00_03 1.mp4',
-    79604: 'drd2_batch2_resting-state Camera 1 18-8-2023 10_00_03 1.mp4',
-    79602: 'drd2_batch2_resting-state Camera 1 18-8-2023 10_00_03 1.mp4',
-    81167: 'drd2_batch5_resting-state Camera 1 10-11-2023 09_44_15 1.mp4',
-    81175: 'drd2_batch5_resting-state Camera 1 10-11-2023 09_44_15 1.mp4',
-    81207: 'drd2_batch5_resting-state Camera 1 10-11-2023 09_44_15 1.mp4',
-    81193: 'drd2_batch5_resting-state Camera 1 10-11-2023 09_44_15 1.mp4',
-    80620: 'drd2_batch4_resting-state Camera 1 13-10-2023 09_29_44 1.mp4',
-    80625: 'drd2_batch4_resting-state Camera 1 13-10-2023 09_29_44 1.mp4',
-    80630: 'drd2_batch4_resting-state Camera 1 13-10-2023 09_29_44 1.mp4',
-    81217: 'drd2_batch5b_resting-state Camera 1 8-12-2023 09_42_26 1.mp4',
-    81218: 'drd2_batch5b_resting-state Camera 1 8-12-2023 09_42_26 1.mp4',
-    39489: 'drd2_batch6_resting-state Camera 1 23-12-2023 09_46_45 1.mp4',
-    39508: 'drd2_batch6_resting-state Camera 1 23-12-2023 09_46_45 1.mp4'
-}
+resting_state_movies = [
+    'drd2_batch1_resting-state Camera 1 7-7-2023 09_40_22 1.mp4',
+    'drd2_batch2_resting-state Camera 1 18-8-2023 10_00_03 1.mp4',
+    'drd2_batch4_resting-state Camera 1 13-10-2023 09_29_44 1.mp4',
+    'drd2_batch5_resting-state Camera 1 10-11-2023 09_44_15 1.mp4',
+    'drd2_batch5b_resting-state Camera 1 8-12-2023 09_42_26 1.mp4',
+    'drd2_batch6_resting-state Camera 1 23-12-2023 09_46_45 1.mp4'
+]
 
 # EMG frequency bands used for resting-state epoch classification (interpretation not comparable to EEG bands)
 freq_bands_emg = {

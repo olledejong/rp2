@@ -8,8 +8,12 @@ general = {
     "institution": "University of Groningen"
 }
 
-paths_general = {
-    "all_animal_metadata": "/Users/olledejong/Documents/MSc_Biology/ResearchProject2/rp2_data/DRD2_EEG_all_animal_info.xlsx",
+# dictionary holding the subject ids and their batch-cage combination identifiers
+subject_id_batch_cage_dict = {
+    78211: 'batch1_cage1', 79593: 'batch2_cage1', 81167: 'batch5_cage1', 80620: 'batch4_cage1', 81217: 'batch5b_cage1', 39489: 'batch6_cage1',
+    78233: 'batch1_cage2', 79592: 'batch2_cage2', 81175: 'batch5_cage2', 80625: 'batch4_cage2', 81218: 'batch5b_cage2', 39508: 'batch6_cage2',
+    78227: 'batch1_cage3', 79604: 'batch2_cage3', 81207: 'batch5_cage3', 80630: 'batch4_cage3',
+    78244: 'batch1_cage4', 79602: 'batch2_cage4', 81193: 'batch5_cage4'
 }
 
 # variables used for raw EEG filtering while creating Neurodata Without Border (NWB) files (one of the first steps)
