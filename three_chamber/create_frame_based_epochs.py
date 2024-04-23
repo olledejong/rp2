@@ -108,7 +108,7 @@ def get_epoch_overlap(event):
     return overlap
 
 
-def get_epochs(nwb_file_path, beh_data_subset, adjusted_video_fps, offset, s_freq):
+def get_epochs(nwb_file_path, beh_data_subset, adjusted_video_fps, offset, s_freq, subject_id, genotype):
     """
     Generates frame based epochs using the frame-timestamped recorded behaviours in 'beh_data_subset'.
     We use the adjusted FPS and the offset between the two first TTL onsets to go from the frame timestamps
@@ -119,6 +119,8 @@ def get_epochs(nwb_file_path, beh_data_subset, adjusted_video_fps, offset, s_fre
     :param adjusted_video_fps:
     :param offset:
     :param s_freq:
+    :param genotype:
+    :param subject_id:
     :return:
     """
     print('\n')
@@ -136,7 +138,7 @@ def get_epochs(nwb_file_path, beh_data_subset, adjusted_video_fps, offset, s_fre
         interaction_end = int(np.ceil(frame_to_sample(stop_frame, adjusted_video_fps, offset, s_freq)))
 
         interaction_eeg, chans = get_eeg(nwb_file_path, 'filtered_EEG', (interaction_start, interaction_end), True)
-        print(chans)
+
         # get overlap each epoch has to have with the previous one in order to capture all EEG data in epochs of 1 sec
         overlap = get_epoch_overlap(event)
 
@@ -144,8 +146,8 @@ def get_epochs(nwb_file_path, beh_data_subset, adjusted_video_fps, offset, s_fre
         # we allow as overlap, is larger than the calculated overlap needed to capture all data.
         max_allowed_overlap = epoch_overlap_cutoff * desired_epoch_length  # in seconds
         if overlap > max_allowed_overlap:
-            print(f'Interaction {index} skipped due to overlap of {overlap:.2f}s on {desired_epoch_length}s epochs.'
-                  f' Exceeds max {epoch_overlap_cutoff * 100:.1f}% of overlap')
+            print(f'Overlap ({overlap:.2f}s) exceeds max {epoch_overlap_cutoff * 100:.1f}% of overlap')
+            print(f'We therefore process interaction {index} with an overlap of 0.0')
             overlap = 0.0
             n_skipped += 1
 
@@ -160,6 +162,8 @@ def get_epochs(nwb_file_path, beh_data_subset, adjusted_video_fps, offset, s_fre
 
         # create metadata dataframe and add to epochs array
         metadata = pd.DataFrame({
+            'subject_id': [subject_id] * len(epochs),
+            'genotype': [genotype] * len(epochs),
             'interaction_n': [index + 1] * len(epochs),
             'interaction_part_n': range(1, len(epochs) + 1),
             'interaction_kind': [event["Behavior"]] * len(epochs),
@@ -198,6 +202,7 @@ def main():
             s_freq = nwb.acquisition['filtered_EEG'].rate  # sampling frequency/resampled frequency of the EEG
             eeg_ttl_onsets_secs = list(nwb.acquisition["TTL_1"].timestamps)  # timestamps of the TTL onsets in seconds
             subject_id = nwb.subject.subject_id  # subject id
+            genotype = nwb.subject.genotype
             io.close()
 
         # get the batch_cage combination name to retrieve the correct behaviour data
@@ -225,7 +230,7 @@ def main():
         first_ttl_offset = get_first_ttl_offset(eeg_ttl_onsets_secs, led_onsets, adjusted_fps, s_freq)
 
         # generate fixed length epochs
-        all_epochs = get_epochs(nwb_file_path, beh_data_subset, adjusted_fps, first_ttl_offset, s_freq)
+        all_epochs = get_epochs(nwb_file_path, beh_data_subset, adjusted_fps, first_ttl_offset, s_freq, subject_id, genotype)
 
         # save this subject's epochs
         all_epochs.save(os.path.join(epochs_folder, f'epochs_{subject_id}-epo.fif'), overwrite=True)
