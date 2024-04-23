@@ -39,7 +39,7 @@ def get_led_onsets(video_analysis_dir, batch_cage_name):
     :param batch_cage_name: cage_batch combi name that we want the led-states for
     :return:
     """
-    with open(os.path.join(video_analysis_dir, 'pickle/led_states.pickle'), "rb") as f:
+    with open(os.path.join(video_analysis_dir, 'led_states.pickle'), "rb") as f:
         led_states = pickle.load(f)
         batch, cage = batch_cage_name.split('_')
         movie_filename = [
@@ -126,7 +126,7 @@ def get_epochs(nwb_file_path, beh_data_subset, adjusted_video_fps, offset, s_fre
     print('\n')
     all_interaction_epochs = []
 
-    n_skipped = 0
+    exceeded_max_overlap = 0
     # loop through all events
     for index, event in beh_data_subset.iterrows():
 
@@ -146,10 +146,10 @@ def get_epochs(nwb_file_path, beh_data_subset, adjusted_video_fps, offset, s_fre
         # we allow as overlap, is larger than the calculated overlap needed to capture all data.
         max_allowed_overlap = epoch_overlap_cutoff * desired_epoch_length  # in seconds
         if overlap > max_allowed_overlap:
-            print(f'Overlap ({overlap:.2f}s) exceeds max {epoch_overlap_cutoff * 100:.1f}% of overlap')
-            print(f'We therefore process interaction {index} with an overlap of 0.0')
+            print(f'Interaction {index}: Overlap ({overlap:.2f}s) exceeds max percentage '
+                  f'({epoch_overlap_cutoff * 100:.1f}%) of overlap proceeding with overlap of 0.0.')
             overlap = 0.0
-            n_skipped += 1
+            exceeded_max_overlap += 1
 
         ch_types = ["emg" if "EMG" in chan else "eeg" for chan in chans]
         info = mne.create_info(ch_names=list(chans), sfreq=s_freq, ch_types=ch_types)
@@ -175,7 +175,8 @@ def get_epochs(nwb_file_path, beh_data_subset, adjusted_video_fps, offset, s_fre
         # save this interaction's epochs
         all_interaction_epochs.append(epochs)
 
-    print(f'\n{n_skipped} out of {len(beh_data_subset)} skipped due to size of overlap.')
+    print(f'\n{exceeded_max_overlap} out of {len(beh_data_subset)} interactions processed with overlap of 0.0 as the'
+          f'calculated overlap exceeded the maximum.')
 
     # concatenate all epoch arrays
     all_epochs = mne.concatenate_epochs(all_interaction_epochs)
