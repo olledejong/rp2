@@ -1,17 +1,6 @@
 """
 Settings specific to the resting-state experiment
 """
-paths_resting_state = {
-    "edf_folder": "",
-    "coordinate_data_folder": "",
-    "nwb_files_folder": "",
-    "plots_folder": "",
-    "epochs_folder": "",
-    "metadata": "",
-    "psd_data_folder": "",
-    "recordings_folder": "",
-    "video_analysis_output": ""
-}
 
 # the desired epoch length that's used to create the fixed length epochs
 desired_epoch_length = 5.0
