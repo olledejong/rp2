@@ -19,9 +19,9 @@ from sklearn.cluster import KMeans, DBSCAN
 from sklearn.decomposition import PCA
 from mne.time_frequency import psd_array_multitaper
 
-# imports from other files
 from settings_general import *
 from resting_state.settings import *
+from shared.helper_functions import *
 
 palette = sns.color_palette("husl", 3)
 
@@ -67,11 +67,12 @@ def calculate_eeg_psd_features(signal, sfreq):
     return eeg_psds
 
 
-def save_radar_cluster_plot(features, df_plot, subject_id):
+def save_radar_cluster_plot(features, df_plot, subject_id, plots_folder):
     """
     Save a grid that includes a radar plot for each cluster that describes average feature values.
     Fourth subplot is the cluster scatterplot, and then finally a violin plot to describe the average feature values.
 
+    :param plots_folder:
     :param features: the already min-max scaled features for the epochs of this subject
     :param subject_id: the subject's id
     :param df_plot: a df holding the numerical data but also PCA components and cluster label
@@ -87,7 +88,7 @@ def save_radar_cluster_plot(features, df_plot, subject_id):
     specs = [[{'type': 'polar'}, {'type': 'polar'}], [{'type': 'polar'}, {'type': 'scatter'}],
              [{"colspan": 2}, None]]
     titles = ["Cluster 0", "Cluster 1", "Cluster 2", "Clusters by PCA components, non-movement epochs",
-                "Boxplot of (min-max scaled) feature distribution per cluster"]
+              "Violin plot of (min-max scaled) feature distribution per cluster"]
     fig = make_subplots(
         rows=row_len, cols=col_len,
         specs=specs,
@@ -152,7 +153,7 @@ def save_radar_cluster_plot(features, df_plot, subject_id):
 
     # COMPLETE FIGURE
     fig.update_layout(
-        height=400*row_len, width=620*col_len,
+        height=400 * row_len, width=620 * col_len,
         margin=dict(l=50, r=50, t=70, b=70),
         colorway=palette,
         showlegend=True,
@@ -162,7 +163,7 @@ def save_radar_cluster_plot(features, df_plot, subject_id):
     )
     fig.update_annotations(yshift=20)
     fig.update_polars(radialaxis=dict(range=[0, max_value + .05]))
-    fig.write_image(os.path.join(paths_resting_state['plots_folder'], f'ploss_thresh_500/non_mov_clustering/{subject_id}.png'))
+    fig.write_image(os.path.join(plots_folder, f'{subject_id}.png'))
 
 
 def tag_outliers(df_numeric, df_plot):
@@ -290,12 +291,13 @@ def remove_outliers_and_perform_pca(full_features_df, numeric_features):
     return df_plot, df_plot_wo_outliers, scaled_features
 
 
-def classify_and_save_epochs(subject_epochs, subject_id):
+def classify_and_save_epochs(subject_epochs, subject_id, epochs_folder):
     """
     Generates the desired features for this subject. Each epoch for this subject is assigned
      to one of the three desired clusters. Hypothetically, the non-movement epochs are clustered
      into sleep, active and 'resting-state' groups.
 
+    :param epochs_folder:
     :param subject_epochs:
     :param subject_id:
     :return:
@@ -329,23 +331,24 @@ def classify_and_save_epochs(subject_epochs, subject_id):
     df_plot_incl_outliers.loc[non_outlier_indexes, 'cluster'] = kmeans.labels_
     df_plot_wo_outliers.loc[:, 'cluster'] = kmeans.labels_
 
-    # save the grid plot that visualizes the characteristics of each cluster for this subject
-    # for this we use all non-outlier epochs from the 'df_plot_wo_outliers' df as this holds the 'new' components
-    save_radar_cluster_plot(scaled_features, df_plot_wo_outliers, subject_id)
-
     # store the cluster column of df_plot as a numpy array in the metadata of the subject's epoch object and
     # save it to the filesystem such that it can be analyzed later. For this we use the cluster column of the
     # df that also holds the outliers (length is equal to the amount of non-mov epochs
     non_mov_epochs.metadata["cluster"] = np.array(df_plot_incl_outliers['cluster'])
     non_mov_epochs.save(
-        os.path.join(paths_resting_state['epochs_folder'], f"epochs_w_cluster_annotations_{subject_id}-epo.fif"),
+        os.path.join(epochs_folder, f"epochs_w_cluster_annotations_{subject_id}-epo.fif"),
         overwrite=True
     )
 
+    return scaled_features, df_plot_wo_outliers
+
 
 def main():
+    epochs_folder = select_folder("Select the folder that holds epoch files starting with 'filtered_epochs_w_movement'")
+    plots_folder = select_or_create_folder("Create or select a folder the overview plots will be written to")
+
     # classify non-movement epochs per subject
-    for epochs_filename in os.listdir(paths_resting_state['epochs_folder']):
+    for epochs_filename in os.listdir(epochs_folder):
         if not epochs_filename.startswith('filtered_epochs_w_movement_') or not epochs_filename.endswith('epo.fif'):
             continue
 
@@ -355,10 +358,16 @@ def main():
         # for now, skipping the subjects that are of bad quality or seem to need clustering using 4 clusters
         print(f"Working with subject {subject_id}.")
 
-        subject_epochs = mne.read_epochs(os.path.join(paths_resting_state['epochs_folder'], epochs_filename), preload=True)
+        subject_epochs = mne.read_epochs(
+            os.path.join(epochs_folder, epochs_filename), preload=True
+        )
         subject_epochs = subject_epochs[:-1]  # somehow the last epoch holds only zeros
 
-        classify_and_save_epochs(subject_epochs, subject_id)
+        scaled_features, df_plot_wo_outliers = classify_and_save_epochs(subject_epochs, subject_id, epochs_folder)
+
+        # save the grid plot that visualizes the characteristics of each cluster for this subject
+        # for this we use all non-outlier epochs from the 'df_plot_wo_outliers' df as this holds the 'new' components
+        save_radar_cluster_plot(scaled_features, df_plot_wo_outliers, subject_id, plots_folder)
 
         print(f"Done with subject {subject_id}.\n")
 
