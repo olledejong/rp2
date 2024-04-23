@@ -182,7 +182,6 @@ def main():
     Main function of the script. Loops through all NWB files and generates both raw and filtered
     epoch arrays for them. The raw and filtered epochs per subject are saved in individual files.
     These files can later be used to add movement/behaviour data to.
-    :return:
     """
     nwb_folder = select_folder("Select the folder that holds the resting-state NWB files")
     epochs_folder = select_or_create_folder("Create or select a folder you wish to store the epoch/EDF files.")
@@ -223,8 +222,8 @@ def main():
         filtered_epochs.save(os.path.join(epochs_folder, f'filtered_epochs_{file.split(".")[0]}-epo.fif'))
 
         print(f"Done with file {file}.")
-    print("Done with all NWB files.")
 
 
 if __name__ == '__main__':
     main()
+    print('Done!')
