@@ -52,7 +52,7 @@ the date, **%H-%M-%S** is the time, and **$SesID** is the session id. **$INC** i
 Before we can do any kind of statistical analysis, may it be power or connectivity analysis, the data needs to be 
 pre-processed.
 
-#### 1. Create a NWB file for each animal
+#### I. Create a NWB file for each animal
 
 First we create a NWB file per animal. This NWB file will hold the EEG data that belongs to the subject, as well as the 
 data about the subject, the electrodes, the experiment etc.
@@ -69,7 +69,7 @@ holds information on all animals.
 
 Once these paths have been provided, a NWB file will be created and written to the selected output directory for each animal.
 
-#### 2. Extract information to align the EEG and video/behavioural data
+#### II. Extract information to align the EEG and video/behavioural data
 
 As we wish to create epochs based on behavioural data, we need to align the EEG data and the video.
 
@@ -88,7 +88,7 @@ It will ask you to provide the folder you saved the ROI Excel file to, as well a
 videos. It gets the TTL/LED onsets for each video and stores these in a pickle file in the folder the ROI Excel file is
 in. 
 
-#### 3. Create an epoch file per animal through frame based epoching
+#### III. Create an epoch file per animal through frame based epoching
 
 Once the NWB files have been created, and we have the TTL/LED onset events, we can create some epochs based on the 
 behavioural data files from BORIS.
@@ -100,6 +100,10 @@ the folder that holds the video analysis output (ROI Excel, pickle file). Lastly
 folder the epoch files will be saved to.
 
 The epoch files are saved in the last mentioned folder.
+
+#### IV. Remove package loss epochs manually using MNE
+
+
 
 ### Statistical Analysis
 
