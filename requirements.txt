@@ -32,8 +32,8 @@ flatbuffers==24.3.7
 fonttools==4.47.2
 fqdn==1.5.1
 gast==0.5.4
-giotto-ph==0.2.2
-giotto-tda==0.6.0
+#giotto-ph==0.2.2
+#giotto-tda==0.6.0
 google-pasta==0.2.0
 grpcio==1.62.1
 h5py==3.10.0
@@ -80,7 +80,7 @@ mdurl==0.1.2
 mistune==3.0.2
 ml-dtypes==0.3.2
 mne==1.6.1
-mne-connectivity @ https://api.github.com/repos/mne-tools/mne-connectivity/zipball/main#sha256=3d1d008bf0ed0bc2cbff0ef5e593b015b5f20fee47cf60b6bfe14bf5dcbbc6cd
+mne-connectivity==0.6.0
 namex==0.0.7
 nbclient==0.9.0
 nbconvert==7.14.2
