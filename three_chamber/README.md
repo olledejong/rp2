@@ -107,4 +107,8 @@ The epoch files are saved in the last mentioned folder.
 
 ### Statistical Analysis
 
-TODO
+Now we have cleaned epochs, we can proceed to do some analysis on it. The following files can be used to do exactly that.
+
+3-chamber Sociability: [eeg_power_analysis.py](/three_chamber/social_preference/eeg_power_analysis.ipynb) & [connectivity_analysis.py](/three_chamber/social_preference/connectivity_analysis.ipynb)
+
+3-chamber Social Preference: [eeg_power_analysis.py](/three_chamber/social_preference/eeg_power_analysis.ipynb) & [connectivity_analysis.py](/three_chamber/social_preference/connectivity_analysis.ipynb)
