@@ -103,7 +103,12 @@ The epoch files are saved in the last mentioned folder.
 
 #### IV. Remove package loss epochs manually using MNE
 
+As we resampled the EEG to 500 Hz, we cannot use the package loss filtering we used for the resting-state analysis.
+Hence, we manually removed the epochs that contained giant artifacts or package loss. To replicate this, read an epoch
+file, and call: `your_epochs_array_object.plot()`. This opens a GUI where you can scroll through all epochs. Click an epoch
+to tag it as 'bad'. Once you have tagged all, close the window, and call `your_epochs_array_object.drop_bad()`
 
+Now you can save the epochs again.
 
 ### Statistical Analysis
 
