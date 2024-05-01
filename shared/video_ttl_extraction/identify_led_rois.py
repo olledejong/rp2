@@ -10,18 +10,6 @@ import pandas as pd
 from shared.helper_functions import select_folder, select_or_create_folder
 
 
-def draw_roi(frame, roi):
-    """
-    Draws a ROI in the given frame.
-
-    :param frame:
-    :param roi:
-    :return:
-    """
-    x, y, w, h = roi
-    cv2.rectangle(frame, (x, y), (x + w, y + h), color=(0, 255, 0), thickness=2)
-
-
 def select_roi(frame):
     """
     Returns from the frame selected ROI.
@@ -29,7 +17,7 @@ def select_roi(frame):
     :param frame:
     :return:
     """
-    r = cv2.selectROI("Select LED Area", frame, fromCenter=False, showCrosshair=True)
+    r = cv2.selectROI("Select LED Area", frame, fromCenter=False, showCrosshair=False)
     cv2.destroyAllWindows()
     return r
 
@@ -62,7 +50,6 @@ def save_led_rois(video_folder, output_folder):
     :return:
     """
     videos = [f for f in os.listdir(video_folder) if f.endswith(('.mp4', '.avi'))]
-    roi = None
     data = []
 
     for video in videos:
@@ -71,18 +58,13 @@ def save_led_rois(video_folder, output_folder):
         cap = cv2.VideoCapture(video_path)
         ret, frame = cap.read()
 
-        if not ret:  # when incapable of reading frame
+        # when incapable of reading frame
+        if not ret:
             print(f"Failed to read video: {video}")
             continue
 
-        if roi is None:  # first video in dir; there's known roi yet
-            roi = select_roi(frame)
-            draw_roi(frame, roi)
-        elif roi is not None:  # if not first selected roi; show previously selected roi
-            draw_roi(frame, roi)
-
-        # allow user to select new roi when previous one is not correct
-        roi = select_new_roi(frame, roi)
+        # let the user select the roi
+        roi = select_roi(frame)
 
         # save the data
         data.append({'Video': video, 'ROI': roi})
