@@ -93,7 +93,7 @@ in.
 Once the NWB files have been created, and we have the TTL/LED onset events, we can create some epochs based on the 
 behavioural data files from BORIS.
 
-Use the [create_frame_based_epochs.py](create_frame_based_epochs.py) script for this. 
+Use the [create_frame_based_epochs.py](../shared/create_frame_based_epochs.py) script for this. 
 
 The script will ask you to select the NWB folder, the folder that holds the behavioural data (one file per animal), and 
 the folder that holds the video analysis output (ROI Excel, pickle file). Lastly, it allows you to select or crreate a

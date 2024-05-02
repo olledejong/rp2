@@ -18,7 +18,8 @@ def merge_event_rows(beh_data):
         beh_data.iloc[::2].reset_index(drop=True),  # only keep each start row
         beh_data.iloc[::2].reset_index(drop=True)['Image index'].rename('Frame start'),  # interaction start frame
         beh_data.iloc[1::2].reset_index(drop=True)['Image index'].rename('Frame stop'),  # interaction stop frame
-        beh_data.iloc[1::2].reset_index(drop=True)['Time'] - beh_data.iloc[::2]['Time'].reset_index(drop=True),  # duration
+        beh_data.iloc[1::2].reset_index(drop=True)['Time'] - beh_data.iloc[::2]['Time'].reset_index(drop=True),
+        # duration
     ], axis=1)
     # rename the last column as it represents the duration of the interaction
     merged_df = merged_df.set_axis([*merged_df.columns[:-1], 'Interaction duration'], axis=1)
@@ -146,8 +147,6 @@ def get_epochs(nwb_file_path, beh_data_subset, adjusted_video_fps, offset, s_fre
         # we allow as overlap, is larger than the calculated overlap needed to capture all data.
         max_allowed_overlap = epoch_overlap_cutoff * desired_epoch_length  # in seconds
         if overlap > max_allowed_overlap:
-            print(f'Interaction {index}: Overlap ({overlap:.2f}s) exceeds max percentage '
-                  f'({epoch_overlap_cutoff * 100:.1f}%) of overlap proceeding with overlap of 0.0.')
             overlap = 0.0
             exceeded_max_overlap += 1
 
@@ -187,7 +186,8 @@ def get_epochs(nwb_file_path, beh_data_subset, adjusted_video_fps, offset, s_fre
 def main():
     nwb_folder = select_folder("Select the folder holding your 3-chamber experiment NWB files")
     behaviour_data = select_folder("Select the experiment's behaviour data folder")
-    video_analysis_folder = select_folder("Select the folder that holds the video analysis output (ROI Excel, pickle file)")
+    video_analysis_folder = select_folder(
+        "Select the folder that holds the video analysis output (ROI Excel, pickle file)")
     epochs_folder = select_or_create_folder("Select or create a folder to where the epoch files are saved")
 
     # create a raw and filtered epochs file per subject (nwb)
@@ -231,7 +231,8 @@ def main():
         first_ttl_offset = get_first_ttl_offset(eeg_ttl_onsets_secs, led_onsets, adjusted_fps, s_freq)
 
         # generate fixed length epochs
-        all_epochs = get_epochs(nwb_file_path, beh_data_subset, adjusted_fps, first_ttl_offset, s_freq, subject_id, genotype)
+        all_epochs = get_epochs(nwb_file_path, beh_data_subset, adjusted_fps, first_ttl_offset, s_freq, subject_id,
+                                genotype)
 
         # save this subject's epochs
         all_epochs.save(os.path.join(epochs_folder, f'epochs_{subject_id}-epo.fif'), overwrite=True)
