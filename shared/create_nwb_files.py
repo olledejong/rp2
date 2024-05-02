@@ -18,7 +18,6 @@ from hdmf.backends.hdf5.h5_utils import H5DataIO
 from shared.helper_functions import *
 from shared.eeg_filtering_functions import filter_eeg
 from settings_general import *
-from three_chamber.settings import *
 
 
 def create_nwb_file(metadata, experiment_name):
@@ -72,8 +71,17 @@ def load_metadata(edf_filename, all_animals_metadata):
     # extract specific info from filename, if not correctly formatted, report to user and exit
     try:
         _, filename = os.path.split(edf_filename)
-        _, transmitterId, subjectId, mouseName, date, time, sesId, _ = re.split('_', filename)
-        subjectId, mouseName = str(subjectId), str(mouseName)
+
+        # find parts from list using regex
+        subject_id = re.search('_(\d{5})_', filename).group(1)
+        mouse_name = re.search('_(\d\.\d)_', filename).group(1)
+        date = re.search('_(\d{4}-\d{2}-\d{2})_', filename).group(1).replace('_', '')
+        time = re.search('_(\d{2}-\d{2}-\d{2})_', filename).group(1).replace('_', '')
+        ses_id = re.search('_(\d{3})_', filename).group(1).replace('_', '')
+        transmitter_id = re.search('_(\d{3}(\w|\d))_', filename).group(1).replace('_', '')
+
+        subject_id, mouse_name = str(subject_id), str(mouse_name)
+
     except ValueError as err:
         sys.exit('Error: make sure the EDF file names are in the correct format. Split on underscores, there should'
                  ' be eight (8) parts: TAINI_$TransmID_$SubID_$ALIAS_%Y-%m-%d_%H-%M-%S_$SesID_$INC.edf')
@@ -83,17 +91,17 @@ def load_metadata(edf_filename, all_animals_metadata):
         'edf_filename': filename,
         'date': date,
         'time': time,
-        'sesId': sesId,
-        'mouseId': subjectId,
-        'mouseName': mouseName,
-        'transmitterId': transmitterId,
-        'arena': all_animals_metadata[all_animals_metadata['mouseId'] == subjectId]['arena'].iloc[0],
-        'genotype': all_animals_metadata[all_animals_metadata['mouseId'] == subjectId]['genotype'].iloc[0],
-        'birthday': all_animals_metadata[all_animals_metadata['mouseId'] == subjectId]['birthday'].iloc[0],
-        'rfid': all_animals_metadata[all_animals_metadata['mouseId'] == subjectId]['RFID'].iloc[0],
-        'weight': all_animals_metadata[all_animals_metadata['mouseId'] == subjectId]['weight'].iloc[0],
-        'sex': all_animals_metadata[all_animals_metadata['mouseId'] == subjectId]['sex'].iloc[0],
-        'species': all_animals_metadata[all_animals_metadata['mouseId'] == subjectId]['species'].iloc[0],
+        'sesId': ses_id,
+        'mouseId': subject_id,
+        'mouseName': mouse_name,
+        'transmitterId': transmitter_id,
+        'arena': all_animals_metadata[all_animals_metadata['mouseId'] == subject_id]['arena'].iloc[0],
+        'genotype': all_animals_metadata[all_animals_metadata['mouseId'] == subject_id]['genotype'].iloc[0],
+        'birthday': all_animals_metadata[all_animals_metadata['mouseId'] == subject_id]['birthday'].iloc[0],
+        'rfid': all_animals_metadata[all_animals_metadata['mouseId'] == subject_id]['RFID'].iloc[0],
+        'weight': all_animals_metadata[all_animals_metadata['mouseId'] == subject_id]['weight'].iloc[0],
+        'sex': all_animals_metadata[all_animals_metadata['mouseId'] == subject_id]['sex'].iloc[0],
+        'species': all_animals_metadata[all_animals_metadata['mouseId'] == subject_id]['species'].iloc[0],
     }
 
     return metadata
