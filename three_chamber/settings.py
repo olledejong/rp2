@@ -2,9 +2,6 @@
 Settings specific to the analysis of the 3-chamber experiments
 """
 
-# set to desired sampling frequency or to None if you do not wish to down-sample the EEG data
-resample_freq = 500
-
 # minimum duration of the interaction between mouse and cup (in seconds)
 min_interaction_duration = 1.0
 

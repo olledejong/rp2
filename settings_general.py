@@ -10,7 +10,7 @@ general = {
 
 # dictionary holding the subject ids and their batch-cage combination identifiers
 subject_id_batch_cage_dict = {
-    78211: 'batch1_cage1', 79593: 'batch2_cage1', 81167: 'batch5_cage1', 80620: 'batch4_cage1', 81217: 'batch5b_cage1', 39489: 'batch6_cage1',
+    78211: 'batch1_cage1', 79593: 'batch2_cage1', 81167: 'batch5_cage1', 80620: 'batch4_cage1', 81217: 'batch5b_cage1', 39489: 'batch6_cage1', 80108: 'batch3_cage3',
     78233: 'batch1_cage2', 79592: 'batch2_cage2', 81175: 'batch5_cage2', 80625: 'batch4_cage2', 81218: 'batch5b_cage2', 39508: 'batch6_cage2',
     78227: 'batch1_cage3', 79604: 'batch2_cage3', 81207: 'batch5_cage3', 80630: 'batch4_cage3',
     78244: 'batch1_cage4', 79602: 'batch2_cage4', 81193: 'batch5_cage4'
@@ -35,6 +35,10 @@ filtering = {
         "EEG 10": ["EMG_R", 0, 0, 0, "emg"]
     }
 }
+
+# set to desired sampling frequency or to None if you do not wish to down-sample the EEG data
+resample_freq = 1000
+
 
 # EEG frequency bands used throughout the whole project for Power Spectral Density analysis
 freq_bands_eeg = {
