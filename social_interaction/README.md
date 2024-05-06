@@ -1,34 +1,16 @@
-# Analysis of the three-chamber experiments 
+# Analysis of the social-interaction experiment
 
-The analysis of the three-chamber experiments can be split into two distinct parts, the behavioural analysis, and the
-electrophysiological/EEG analysis. 
+The analysis of the social interaction test can be split into two distinct parts, the behavioural analysis, and the
+electrophysiological/EEG analysis.
 
-The former is done using a notebook for both the [sociability](/three_chamber/sociability/behavioural_analysis.ipynb)
-experiment as well as the [social preference](/three_chamber/social_preference/behavioural_analysis.ipynb) experiment. 
-See [Behavioural analysis](#behavioural-analysis).
+We use Excel files holding the tracked behaviour for the behavioural analysis. These files were obtained by
+by using the BORIS tracking software. This manual behaviour scoring was performed by bachelor students Lotte and Rebeka.
 
-The time-locked EEG analysis is performed by first preprocessing the data of both the 3-chamber sociability and 
-the preference experiments, which can be performed using exactly the same files. Only the actual power and connectivity
-analysis is performed using different notebooks. See [Electrophysiological analysis](#electrophysiological-analysis).
+The time-locked EEG analysis is performed by first preprocessing the raw EEG data.
 
 ## Behavioural analysis
 
-The main output of this analysis is a violin plot of sociability/social preference metrics between
-DRD2-WT and DRD2-KO mice. As mentioned, there's a notebook for both the [sociability](/three_chamber/sociability/behavioural_analysis.ipynb)
-experiment and the [social preference](/three_chamber/social_preference/behavioural_analysis.ipynb) experiment.
-
-The notebook uses Tkinter (folder select dialogs) to retrieve the paths it needs to do its thing. Just work your
-way through the notebook and you should be set.
-
 ## Electroencephalogram (EEG) analysis
-
-Brain activity has been recorded over the course of the experiments. To analyse this, we first need to preprocess the raw
-EEG data and create frame-based epochs (i.e. epochs based on the behavioural data). E.g. a social cup interaction starts
-and ends at a certain frame of the video (BORIS data). We use those frame time-stamps to calculate the EEG sample so we
-can retrieve the EEG data that belongs to the interaction.
-
-Once we've created social/non-social or novel/familiar interaction epochs, we can proceed to the actual power and/or 
-connectivity analysis (see [Statistical Analysis](#statistical-analysis)).
 
 ### Prerequisites
 
@@ -60,8 +42,7 @@ data about the subject, the electrodes, the experiment etc.
 Use the [NWB creation script](/shared/create_nwb_files.py) to do this. Again, it is important that the file-names of your EDF
 files are structured like this: **TAINI_$TransmID_$SubID_$ALIAS_%Y-%m-%d_%H-%M-%S_$SesID_$INC.edf**
 
-The script will ask you to enter a experiment identifier, so provide either 'three_chamber_sociability', or 
-'three_chamber_preference' here.
+The script will ask you to enter a experiment identifier, so enter something like: 'social_interaction'.
 
 Then, the script asks you to select the directory that hold the EDF files for this experiment. It will also ask you to
 select or create a directory to save the NWB files to. Lastly, it will ask for the location of the metadata file that
@@ -101,19 +82,8 @@ folder the epoch files will be saved to.
 
 The epoch files are saved in the last mentioned folder.
 
-#### IV. Remove package loss epochs manually using MNE
-
-As we resampled the EEG to 500 Hz, we cannot use the package loss filtering we used for the resting-state analysis.
-Hence, we manually removed the epochs that contained giant artifacts or package loss. To replicate this, read an epoch
-file, and call: `your_epochs_array_object.plot()`. This opens a GUI where you can scroll through all epochs. Click an epoch
-to tag it as 'bad'. Once you have tagged all, close the window, and call `your_epochs_array_object.drop_bad()`
-
-Now you can save the epochs again.
-
 ### Statistical Analysis
 
 Now we have cleaned epochs, we can proceed to do some analysis on it. The following files can be used to do exactly that.
 
-3-chamber Sociability: [eeg_power_analysis.py](/three_chamber/social_preference/eeg_power_analysis.ipynb) & [connectivity_analysis.py](/three_chamber/social_preference/connectivity_analysis.ipynb)
-
-3-chamber Social Preference: [eeg_power_analysis.py](/three_chamber/social_preference/eeg_power_analysis.ipynb) & [connectivity_analysis.py](/three_chamber/social_preference/connectivity_analysis.ipynb)
+[eeg_power_analysis.py](/social_interaction/eeg_power_analysis.ipynb) & [connectivity_analysis.py](/social_interaction/connectivity_analysis.ipynb)
