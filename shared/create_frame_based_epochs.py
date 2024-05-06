@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from pynwb import NWBHDF5IO
 
-from settings import *
+from settings_general import *
 from shared.helper_functions import *
 from shared.nwb_retrieval_functions import get_eeg
 from settings_general import subject_id_batch_cage_dict
@@ -140,15 +140,18 @@ def get_epochs(nwb_file_path, beh_data_subset, adjusted_video_fps, offset, s_fre
 
         interaction_eeg, chans = get_eeg(nwb_file_path, 'filtered_EEG', (interaction_start, interaction_end), True)
 
-        # get overlap each epoch has to have with the previous one in order to capture all EEG data in epochs of 1 sec
-        overlap = get_epoch_overlap(event)
+        if overlap_epochs:
+            # get overlap each epoch needs to have with preceding one to capture all EEG data in epochs of desired len
+            overlap = get_epoch_overlap(event)
 
-        # we check if the 'epoch_overlap_cutoff * desired_epoch_length', which is the duration of the epoch length that
-        # we allow as overlap, is larger than the calculated overlap needed to capture all data.
-        max_allowed_overlap = epoch_overlap_cutoff * desired_epoch_length  # in seconds
-        if overlap > max_allowed_overlap:
+            # check if the 'epoch_overlap_cutoff * desired_epoch_length', which is the duration of the epoch length that
+            # we allow as overlap, is larger than the calculated overlap needed to capture all data.
+            max_allowed_overlap = epoch_overlap_cutoff * desired_epoch_length  # in seconds
+            if overlap > max_allowed_overlap:
+                overlap = 0.0
+                exceeded_max_overlap += 1
+        else:
             overlap = 0.0
-            exceeded_max_overlap += 1
 
         ch_types = ["emg" if "EMG" in chan else "eeg" for chan in chans]
         info = mne.create_info(ch_names=list(chans), sfreq=s_freq, ch_types=ch_types)
@@ -174,8 +177,9 @@ def get_epochs(nwb_file_path, beh_data_subset, adjusted_video_fps, offset, s_fre
         # save this interaction's epochs
         all_interaction_epochs.append(epochs)
 
-    print(f'\n{exceeded_max_overlap} out of {len(beh_data_subset)} interactions processed with overlap of 0.0 as the'
-          f'calculated overlap exceeded the maximum.')
+    if overlap_epochs:
+        print(f'\n{exceeded_max_overlap} out of {len(beh_data_subset)} interactions processed with overlap of 0.0 as '
+              f'the calculated overlap exceeded the maximum.')
 
     # concatenate all epoch arrays
     all_epochs = mne.concatenate_epochs(all_interaction_epochs)
