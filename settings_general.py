@@ -16,6 +16,10 @@ subject_id_batch_cage_dict = {
     78244: 'batch1_cage4', 79602: 'batch2_cage4', 81193: 'batch5_cage4'
 }
 
+########################
+## FILTERING SETTINGS ##
+########################
+
 # variables used for raw EEG filtering while creating Neurodata Without Border (NWB) files (one of the first steps)
 filtering = {
     "lcut": 0.5,  # lower limit of desired band / filter (to be normalized)
@@ -36,9 +40,30 @@ filtering = {
     }
 }
 
+############################################################
+## SETTINGS FOR EXPERIMENTS THAT USE FRAME BASED EPOCHING ##
+############################################################
+
+# minimum duration of the interaction between mouse and cup/mouse (in seconds)
+min_interaction_duration = 1.0
+
+# the desired epoch length the events will be divided into
+desired_epoch_length = 1.0
+
+# whether to overlap epochs at all
+overlap_epochs = False
+
+# the maximum percentage (as a fraction) of information duplication between epochs we allow
+# this would mean that with a cutoff of 50% (epoch_overlap_cutoff=0.5), an interaction of duration 1.4 would yield one
+# epoch of 1 second (60.0% duplication), i.e. the 0.4 seconds of data is deleted.
+epoch_overlap_cutoff = 0.5
+
+####################
+## OTHER SETTINGS ##
+####################
+
 # set to desired sampling frequency or to None if you do not wish to down-sample the EEG data
 resample_freq = 1000
-
 
 # EEG frequency bands used throughout the whole project for Power Spectral Density analysis
 freq_bands_eeg = {
