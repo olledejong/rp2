@@ -94,7 +94,9 @@ def generate_module_components(data):
 
 
 def main():
+    print("Select the folder to hold the NWB files")
     nwb_folder = select_folder("Select the folder to hold the NWB files")
+    print("Select the folder that holds the from EthoVision exported movement (xy) data")
     coordinates_folder = select_folder("Select the folder that holds the from EthoVision exported movement (xy) data")
 
     # loop over all created NWB files

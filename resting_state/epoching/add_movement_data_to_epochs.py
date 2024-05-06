@@ -58,8 +58,10 @@ def main():
     all epochs and saves this to the filesystem.
     :return:
     """
-    nwb_folder = select_folder("Please select the folder that holds the resting-state NWB files")
-    epochs_folder = select_folder("Please select the folder that holds the resting-state epoch files")
+    print("Select the folder that holds the resting-state NWB files")
+    nwb_folder = select_folder("Select the folder that holds the resting-state NWB files")
+    print("Select the folder that holds the resting-state epoch files")
+    epochs_folder = select_folder("Select the folder that holds the resting-state epoch files")
     resting_cutoff = 0  # number of frames of movement that is allowed in one epoch
 
     all_epochs = []

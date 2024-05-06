@@ -95,7 +95,9 @@ def get_led_states(snapshot_path, recordings_folder, rois_df):
 
 
 def main():
+    print("Select the folder that holds the 'video_rois.xlsx' file")
     video_analysis_output_folder = select_or_create_folder("Select the folder that holds the 'video_rois.xlsx' file")
+    print("Select the folder that holds the experiment recordings")
     recordings_folder = select_folder("Select the folder that holds the experiment recordings")
 
     # read the roi dataframe created with the identify_led_rois.py script

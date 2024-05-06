@@ -77,7 +77,9 @@ def score_epoch_clips(subject_clips, subject_id, clips_folder):
 
 
 def main():
+    print("Select the folder holding the resting-state epoch files")
     epochs_folder = select_folder("Select the folder holding the resting-state epoch files")
+    print("Select the folder holding the clips that need to be scored")
     clips_folder = select_folder("Select the folder holding the clips that need to be scored")
 
     # get the unique subject ids for which there are clips created

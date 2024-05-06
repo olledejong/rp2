@@ -288,8 +288,11 @@ def main():
     and filtered EEG data.
     """
     experiment_name = input('Experiment name (e.g. 3c_sociability or resting_state): ')
+    print("Select the folder that holds the EDF files")
     edf_folder = select_folder("Select the folder that holds the EDF files")
+    print("Select or create a folder to hold the output NWB files")
     nwb_output_folder = select_or_create_folder("Select or create a folder to hold the output NWB files")
+    print("Select the excel file that holds information about all experimental animals")
     all_animals_metadata = select_file("Select the excel file that holds information about all experimental animals")
 
     # read the metadata

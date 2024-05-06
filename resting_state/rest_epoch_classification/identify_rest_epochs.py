@@ -344,7 +344,9 @@ def classify_and_save_epochs(subject_epochs, subject_id, epochs_folder):
 
 
 def main():
+    print("Select the folder that holds epoch files starting with 'filtered_epochs_w_movement'")
     epochs_folder = select_folder("Select the folder that holds epoch files starting with 'filtered_epochs_w_movement'")
+    print("Create or select a folder the overview plots will be written to")
     plots_folder = select_or_create_folder("Create or select a folder the overview plots will be written to")
 
     # classify non-movement epochs per subject

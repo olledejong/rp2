@@ -76,6 +76,8 @@ def save_led_rois(video_folder, output_folder):
 
 
 if __name__ == "__main__":
+    print("Select folder containing the videos of the experiment you're working on")
     video_folder_path = select_folder("Select folder containing the videos of the experiment you're working on")
+    print("Create or select a folder to save the LED ROI Excel file to")
     video_analysis_output_path = select_or_create_folder("Create or select a folder to save the LED ROI Excel file to")
     save_led_rois(video_folder_path, video_analysis_output_path)

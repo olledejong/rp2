@@ -183,9 +183,12 @@ def main():
     epoch arrays for them. The raw and filtered epochs per subject are saved in individual files.
     These files can later be used to add movement/behaviour data to.
     """
+    print("Select the folder that holds the resting-state NWB files")
     nwb_folder = select_folder("Select the folder that holds the resting-state NWB files")
-    epochs_folder = select_or_create_folder("Create or select a folder you wish to store the epoch/EDF files.")
-    video_analysis_output_folder = select_folder("Select the video analysis folder that holds the pickle subdirectory.")
+    print("Create or select a folder you wish to store the epoch/EDF files")
+    epochs_folder = select_or_create_folder("Create or select a folder you wish to store the epoch/EDF files")
+    print("Select the video analysis folder that holds the pickle subdirectory")
+    video_analysis_output_folder = select_folder("Select the video analysis folder that holds the pickle subdirectory")
 
     for file in os.listdir(nwb_folder):
         if not file.endswith(".nwb"):

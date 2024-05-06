@@ -68,8 +68,11 @@ def generate_clips(subject_epochs, subject_id, clips_folder, recordings_folder):
 
 
 def main():
+    print("Select the folder holding the resting-state epoch files")
     epochs_folder = select_folder("Select the folder holding the resting-state epoch files")
+    print("Select the folder holding the clips that need to be scored")
     clips_folder = select_folder("Select the folder holding the clips that need to be scored")
+    print("Select the folder holding the resting-state experiment recordings")
     recordings_folder = select_folder("Select the folder holding the resting-state experiment recordings")
 
     for i, file in os.listdir(epochs_folder):

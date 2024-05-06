@@ -188,10 +188,14 @@ def get_epochs(nwb_file_path, beh_data_subset, adjusted_video_fps, offset, s_fre
 
 
 def main():
+    print('Select the folder holding your 3-chamber experiment NWB files')
     nwb_folder = select_folder("Select the folder holding your 3-chamber experiment NWB files")
+    print("Select the experiment's behaviour data folder")
     behaviour_data = select_folder("Select the experiment's behaviour data folder")
+    print("Select the folder that holds the video analysis output (ROI Excel, pickle file)")
     video_analysis_folder = select_folder(
         "Select the folder that holds the video analysis output (ROI Excel, pickle file)")
+    print("Select or create a folder to where the epoch files are saved")
     epochs_folder = select_or_create_folder("Select or create a folder to where the epoch files are saved")
 
     # create a raw and filtered epochs file per subject (nwb)
