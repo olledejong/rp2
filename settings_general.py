@@ -16,9 +16,28 @@ subject_id_batch_cage_dict = {
     78244: 'batch1_cage4', 79602: 'batch2_cage4', 81193: 'batch5_cage4'
 }
 
-########################
-## FILTERING SETTINGS ##
-########################
+# EEG frequency bands used throughout the whole project for Power Spectral Density analysis
+freq_bands_eeg = {
+    r'$\delta$': (1, 4),  # Delta
+    r'$\theta$': (4, 8),  # Theta
+    r'$\alpha$': (8, 13),  # Alpha
+    r'$\beta$': (13, 30),  # Beta
+    r'$\gamma$': (30, 100)  # Gamma
+}
+
+# after inspecting the power traces of all subjects, these channels were noted as having bad quality
+low_qual_chans = {
+    39489: ["OFC_R"],
+    80625: ["OFC_L"],
+    81193: ["OFC_R", "OFC_L"]
+}
+
+#######################################
+## FILTERING / NWB CREATION SETTINGS ##
+#######################################
+
+# set to desired sampling frequency or to None if you do not wish to down-sample the EEG data
+resample_freq = 1000
 
 # variables used for raw EEG filtering while creating Neurodata Without Border (NWB) files (one of the first steps)
 filtering = {
@@ -40,12 +59,12 @@ filtering = {
     }
 }
 
-############################################################
-## SETTINGS FOR EXPERIMENTS THAT USE FRAME BASED EPOCHING ##
-############################################################
+###################################
+## FRAME BASED EPOCHING SETTINGS ##
+###################################
 
 # minimum duration of the interaction between mouse and cup/mouse (in seconds)
-min_interaction_duration = 1.0
+min_event_duration = 1.0
 
 # the desired epoch length the events will be divided into
 desired_epoch_length = 1.0
@@ -61,22 +80,3 @@ epoch_overlap_cutoff = 0.5
 ####################
 ## OTHER SETTINGS ##
 ####################
-
-# set to desired sampling frequency or to None if you do not wish to down-sample the EEG data
-resample_freq = 1000
-
-# EEG frequency bands used throughout the whole project for Power Spectral Density analysis
-freq_bands_eeg = {
-    r'$\delta$': (1, 4),  # Delta
-    r'$\theta$': (4, 8),  # Theta
-    r'$\alpha$': (8, 13),  # Alpha
-    r'$\beta$': (13, 30),  # Beta
-    r'$\gamma$': (30, 100)  # Gamma
-}
-
-# after inspecting the power traces of all subjects, these channels were noted as having bad quality
-low_qual_chans = {
-    39489: ["OFC_R"],
-    80625: ["OFC_L"],
-    81193: ["OFC_R", "OFC_L"]
-}
