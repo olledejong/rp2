@@ -223,10 +223,13 @@ def main():
         beh_data = pd.read_excel(os.path.join(behaviour_data, f'{batch_cage}.xlsx'))
         beh_data = merge_event_rows(beh_data)
 
-        print(f'Number of interactions longer than {min_interaction_duration} seconds:'
-              f' {len(beh_data[beh_data["Interaction duration"] > min_interaction_duration])}\n')
+        longer_than = len(beh_data[beh_data["Interaction duration"] >= min_event_duration])
+        shorter_than = len(beh_data[beh_data["Interaction duration"] < min_event_duration])
+        print(f'Total number of interaction: {len(beh_data)}.')
+        print(f'Percentage of events shorter than {min_event_duration} seconds: '
+              f'{shorter_than / (shorter_than + longer_than) * 100:.2f}%')
 
-        beh_data_subset = beh_data[beh_data["Interaction duration"] > min_interaction_duration]
+        beh_data_subset = beh_data[beh_data["Interaction duration"] >= min_event_duration]
         beh_data_subset.reset_index(drop=True, inplace=True)
 
         # get the LED states for this subject (i.e. get the LED states of the correct video)
