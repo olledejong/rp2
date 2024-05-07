@@ -64,7 +64,8 @@ filtering = {
 ###################################
 
 # minimum duration of the interaction between mouse and cup/mouse (in seconds)
-min_event_duration = 1.0
+# set to None if you do not wish to require a minimum event duration
+min_event_duration = None
 
 # the desired epoch length the events will be divided into
 desired_epoch_length = 1.0

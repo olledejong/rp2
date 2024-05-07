@@ -109,6 +109,47 @@ def get_epoch_overlap(event):
     return overlap
 
 
+def get_eeg_start_end_tps(adjusted_video_fps, event, offset, s_freq):
+    """
+    Function that gets the start and en end time-points in frames from the event row and processes this to
+    the same time-points, but in (eeg) sample. Also handles the cases where the min_event_duration (defined in
+    settings_general.py) is smaller than the desired_epoch_length (defined in settings_general.py), or when
+    min_event_duration is set to None
+
+    :param adjusted_video_fps:
+    :param event:
+    :param offset:
+    :param s_freq:
+    :return:
+    """
+    # get the start and stop frame time-point of this event
+    start_frame, stop_frame = int(event['Frame start']), int(event['Frame stop'])
+
+    # total event duration
+    event_duration = event['Interaction duration']
+
+    # when the min_event_duration is None, we very likely get events that are shorter than the desired_epoch_length
+    # however, it is also possible that the event_duration is shorter than the desired epoch length if we DO set the
+    # min_event_duration
+    # therefore we need to add EEG data on each side of the actual interaction to get to the desired epoch length.
+    if event_duration < desired_epoch_length:
+
+        missing_duration = desired_epoch_length - event_duration  # seconds
+        missing_duration_frames = missing_duration * adjusted_video_fps  # in frames
+
+        # get the amount of frames we need to add to each side of the interaction in order to make it of length
+        # 'desired_epoch_length'
+        to_subtract_and_add = missing_duration_frames / 2
+
+        start_frame, stop_frame = np.floor(start_frame - to_subtract_and_add), np.ceil(stop_frame + to_subtract_and_add)
+
+    # using the adjusted FPS and the offset of the first TTL, get the start/stop time-points of the event in samples
+    interaction_start = int(frame_to_sample(start_frame, adjusted_video_fps, offset, s_freq))
+    interaction_end = int(frame_to_sample(stop_frame, adjusted_video_fps, offset, s_freq))
+
+    return interaction_start, interaction_end
+
+
 def get_epochs(nwb_file_path, beh_data_subset, adjusted_video_fps, offset, s_freq, subject_id, genotype):
     """
     Generates frame based epochs using the frame-timestamped recorded behaviours in 'beh_data_subset'.
@@ -124,22 +165,16 @@ def get_epochs(nwb_file_path, beh_data_subset, adjusted_video_fps, offset, s_fre
     :param subject_id:
     :return:
     """
-    print('\n')
     all_interaction_epochs = []
 
-    exceeded_max_overlap = 0
     # loop through all events
     for index, event in beh_data_subset.iterrows():
 
-        # get the start and stop frame time-point of this event
-        start_frame, stop_frame = int(event['Frame start']), int(event['Frame stop'])
-
-        # using the adjusted FPS and the offset of the first TTL, get the start/stop time-points of the event in samples
-        interaction_start = int(np.floor(frame_to_sample(start_frame, adjusted_video_fps, offset, s_freq)))
-        interaction_end = int(np.ceil(frame_to_sample(stop_frame, adjusted_video_fps, offset, s_freq)))
+        interaction_start, interaction_end = get_eeg_start_end_tps(adjusted_video_fps, event, offset, s_freq)
 
         interaction_eeg, chans = get_eeg(nwb_file_path, 'filtered_EEG', (interaction_start, interaction_end), True)
 
+        overlap = 0.0
         if overlap_epochs:
             # get overlap each epoch needs to have with preceding one to capture all EEG data in epochs of desired len
             overlap = get_epoch_overlap(event)
@@ -149,9 +184,6 @@ def get_epochs(nwb_file_path, beh_data_subset, adjusted_video_fps, offset, s_fre
             max_allowed_overlap = epoch_overlap_cutoff * desired_epoch_length  # in seconds
             if overlap > max_allowed_overlap:
                 overlap = 0.0
-                exceeded_max_overlap += 1
-        else:
-            overlap = 0.0
 
         ch_types = ["emg" if "EMG" in chan else "eeg" for chan in chans]
         info = mne.create_info(ch_names=list(chans), sfreq=s_freq, ch_types=ch_types)
@@ -177,19 +209,61 @@ def get_epochs(nwb_file_path, beh_data_subset, adjusted_video_fps, offset, s_fre
         # save this interaction's epochs
         all_interaction_epochs.append(epochs)
 
-    if overlap_epochs:
-        print(f'\n{exceeded_max_overlap} out of {len(beh_data_subset)} interactions processed with overlap of 0.0 as '
-              f'the calculated overlap exceeded the maximum.')
-
     # concatenate all epoch arrays
     all_epochs = mne.concatenate_epochs(all_interaction_epochs)
 
     return all_epochs
 
 
+def create_cleaned_event_df(beh_data, batch_cage, subject_id, genotype):
+    """
+    Checks if there are an equal amount of START and STOP events per event type. If not, it will try to fix it,
+    if it seems unfixable, it will skip the event in question.
+
+    :param beh_data:
+    :param batch_cage:
+    :param subject_id:
+    :param genotype:
+    :return:
+    """
+    beh_df = pd.DataFrame()
+
+    for event_type in beh_data['Behavior'].unique():
+        beh_dat_event = beh_data[beh_data['Behavior'] == event_type]
+        starts = beh_dat_event[beh_dat_event['Behavior type'] == 'START']
+        stops = beh_dat_event[beh_dat_event['Behavior type'] == 'STOP']
+
+        if len(stops) < len(starts):
+            print(f'({batch_cage}, {subject_id}) Number of STOPs is smaller than number of STARTs for {event_type}')
+            if beh_dat_event.iloc[-1]['Behavior type'] == 'START':
+                print('Removing last row because it is of type START')
+                beh_dat_event = beh_dat_event.drop(beh_dat_event.index[-1])
+            else:
+                print(f'Number of STOPs is smaller than number of STARTs, but this is not caused by a START at '
+                      f'the last row of the dataframe. Skipping..')
+                continue
+        if len(starts) < len(stops):
+            print(f'({batch_cage}, {subject_id}) Number of STARTs is smaller than number of STOPs for {event_type}')
+            if beh_dat_event.iloc[0]['Behavior type'] == 'STOP':
+                print('Removing first row because it is of type STOP')
+                beh_dat_event = beh_dat_event.drop(beh_dat_event.index[0])
+            else:
+                print(f'Number of STARTs is smaller than number of STOPs, but this is not caused by a STOP at '
+                      f'the first row of the dataframe. Skipping..')
+                continue
+
+        beh_dat_event = merge_event_rows(beh_dat_event)
+        # merge the start and stop rows and calculate some stuff (interaction duration etc)
+        beh_dat_event.insert(1, 'subject_id', subject_id)
+        beh_dat_event.insert(2, 'genotype', genotype)
+        beh_df = pd.concat([beh_df, beh_dat_event], axis=0)
+
+    return beh_df
+
+
 def main():
-    print('Select the folder holding your 3-chamber experiment NWB files')
-    nwb_folder = select_folder("Select the folder holding your 3-chamber experiment NWB files")
+    print('Select the folder holding your experiment NWB files')
+    nwb_folder = select_folder("Select the folder holding your experiment NWB files")
     print("Select the experiment's behaviour data folder")
     behaviour_data = select_folder("Select the experiment's behaviour data folder")
     print("Select the folder that holds the video analysis output (ROI Excel, pickle file)")
@@ -221,16 +295,19 @@ def main():
         # load the behavioural data and then merge start/stop events
         # tracking data from BORIS software has 2 rows for each state event (start/stop), we want one for each
         beh_data = pd.read_excel(os.path.join(behaviour_data, f'{batch_cage}.xlsx'))
-        beh_data = merge_event_rows(beh_data)
+        beh_data = create_cleaned_event_df(beh_data, batch_cage, subject_id, genotype)
 
-        longer_than = len(beh_data[beh_data["Interaction duration"] >= min_event_duration])
-        shorter_than = len(beh_data[beh_data["Interaction duration"] < min_event_duration])
         print(f'Total number of interaction: {len(beh_data)}.')
-        print(f'Percentage of events shorter than {min_event_duration} seconds: '
-              f'{shorter_than / (shorter_than + longer_than) * 100:.2f}%')
+        print(f'Number of events per type: {np.unique(beh_data["Behavior"], return_counts=True)}')
 
-        beh_data_subset = beh_data[beh_data["Interaction duration"] >= min_event_duration]
-        beh_data_subset.reset_index(drop=True, inplace=True)
+        if min_event_duration is not None:
+            longer_than = len(beh_data[beh_data["Interaction duration"] >= min_event_duration])
+            shorter_than = len(beh_data[beh_data["Interaction duration"] < min_event_duration])
+            print(f'Percentage of events shorter than {min_event_duration} seconds: '
+                  f'{shorter_than / (shorter_than + longer_than) * 100:.2f}%')
+
+            beh_data = beh_data[beh_data["Interaction duration"] >= min_event_duration]
+            beh_data.reset_index(drop=True, inplace=True)
 
         # get the LED states for this subject (i.e. get the LED states of the correct video)
         # and then get the frames where the LED turned ON (i.e. get all boolean event changes from OFF to ON (0 to 1)
@@ -238,11 +315,11 @@ def main():
 
         # as the video isn't recorded at exactly 30 fps, we calculate the true fps
         # the offset here is the difference in TTL onset between the EEG and LED (negative means that LED has delay)
-        adjusted_fps = adjust_fps(filtered_eeg, eeg_ttl_onsets_secs, led_onsets, s_freq)
+        adjusted_fps = adjust_fps(filtered_eeg, eeg_ttl_onsets_secs, led_onsets, s_freq, verbose=False)
         first_ttl_offset = get_first_ttl_offset(eeg_ttl_onsets_secs, led_onsets, adjusted_fps, s_freq)
 
         # generate fixed length epochs
-        all_epochs = get_epochs(nwb_file_path, beh_data_subset, adjusted_fps, first_ttl_offset, s_freq, subject_id,
+        all_epochs = get_epochs(nwb_file_path, beh_data, adjusted_fps, first_ttl_offset, s_freq, subject_id,
                                 genotype)
 
         # save this subject's epochs

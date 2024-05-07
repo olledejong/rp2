@@ -22,7 +22,7 @@ def get_first_ttl_offset(eeg_ttl_onsets, led_ttl_onsets, adjusted_fps, s_freq):
     return offset_secs
 
 
-def adjust_fps(eeg_signal, eeg_ttl_onsets, led_ttl_onsets, s_freq):
+def adjust_fps(eeg_signal, eeg_ttl_onsets, led_ttl_onsets, s_freq, verbose=True):
     """
     The experiment videos were recorded in 30 fps, thus, in theory the amount of frames in one second should be 30.
     However, the true framerate of the recordings seems to be lower. Therefore, we need to adjust the fps and know
@@ -32,6 +32,7 @@ def adjust_fps(eeg_signal, eeg_ttl_onsets, led_ttl_onsets, s_freq):
     return the offset between the first EEG TTL and the first LED ttl, as both recordings didn't start at the exact
     same time. This offset is used to align the data.
 
+    :param verbose:
     :param eeg_signal:
     :param eeg_ttl_onsets:
     :param led_ttl_onsets:
@@ -41,14 +42,16 @@ def adjust_fps(eeg_signal, eeg_ttl_onsets, led_ttl_onsets, s_freq):
     # find length of eeg signal between the two pulse combination (i.e. the number of samples between the two pulses)
     eeg_len = eeg_signal[int(s_freq * eeg_ttl_onsets[0]): int(s_freq * eeg_ttl_onsets[-1])].shape[0]
 
-    print(f'There are {eeg_len} EEG samples between the first and last TTL pulses, '
-          f'which translates to {eeg_len / s_freq} seconds and {eeg_len / s_freq / 60} minutes of data')
+    if verbose:
+        print(f'There are {eeg_len} EEG samples between the first and last TTL pulses, '
+              f'which translates to {eeg_len / s_freq} seconds and {eeg_len / s_freq / 60} minutes of data')
 
     # find length of video frames between the two pulse combination
     frame_len = led_ttl_onsets[-1] - led_ttl_onsets[0]
 
-    print(f'There are {frame_len} frames between the first and last LED pulses, which theoretically equals'
-          f' to {frame_len / 30} seconds and {frame_len / 30 / 60} minutes of data')
+    if verbose:
+        print(f'There are {frame_len} frames between the first and last LED pulses, which theoretically equals'
+              f' to {frame_len / 30} seconds and {frame_len / 30 / 60} minutes of data')
 
     # there are fewer frames between the two LED pulses then there should be, so the camera isn't recording at exactly
     # the theoretical 30 frames per second.
@@ -58,7 +61,8 @@ def adjust_fps(eeg_signal, eeg_ttl_onsets, led_ttl_onsets, s_freq):
     # in seconds between those pulses, and we then calculate the true FPS by dividing the recorded frames by this value
     adjusted_fps = frame_len / (eeg_len / s_freq)
 
-    print(f'Adjusted FPS: {adjusted_fps}. Total frames / adjusted_fps = {frame_len / adjusted_fps} seconds. '
-          f'That value should be equal to EEG samples / sampling_frequency: {eeg_len / s_freq}.')
+    if verbose:
+        print(f'Adjusted FPS: {adjusted_fps}. Total frames / adjusted_fps = {frame_len / adjusted_fps} seconds. '
+              f'That value should be equal to EEG samples / sampling_frequency: {eeg_len / s_freq}.')
 
     return adjusted_fps

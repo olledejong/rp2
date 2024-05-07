@@ -80,6 +80,25 @@ The script will ask you to select the NWB folder, the folder that holds the beha
 the folder that holds the video analysis output (ROI Excel, pickle file). Lastly, it allows you to select or create a
 folder the epoch files will be saved to.
 
+We argued that, in contrary to the 3-chamber experiments, short interactions might also elicit interesting brain 
+activity, as sniffing and such direct interactions may be very brief. Hence, we set the *min_event_duration* in 
+[settings_general.py](/settings_general.py) to None.
+
+Furthermore, the length of the created epochs is determined by the setting *desired_epoch_length* in [settings_general.py](/settings_general.py).
+
+Lastly, you can indicate in the same settings file whether you want epochs to overlap using *overlap_epochs* and
+*epoch_overlap_cutoff*. 
+
+Example: Imagine if you have an epoch of 1.4 seconds, and that your settings are:
+- *min_event_duration* is 1 (second)
+- *desired_epoch_length* is 1 (second)
+- *overlap_epochs* is True
+- *epoch_overlap_cutoff* is 0.5 (fraction, equals 50%)
+
+Then, the [create_frame_based_epochs.py](../shared/create_frame_based_epochs.py) script would create an overlap of 0.6 seconds, which in theory yields an
+epoch of 0.0s -> 1.0s, and an epoch of 0.4s -> 1.4s. However, this overlap exceeds the maximum epoch overlap (given 
+by *epoch_overlap_cutoff*). Hence, this interaction yields one epoch of one second ( 0.0 --> 1.0s ), the rest (0.4s) is
+discarded.
 The epoch files are saved in the last mentioned folder.
 
 ### Statistical Analysis
