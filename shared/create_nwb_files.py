@@ -74,7 +74,7 @@ def load_metadata(edf_filename, all_animals_metadata):
 
         # find parts from list using regex
         subject_id = re.search('_(\d{5})_', filename).group(1)
-        mouse_name = re.search('_(\d\.\d)_', filename).group(1)
+        mouse_name = re.search('_(\d\.\d+)_', filename).group(1)
         date = re.search('_(\d{4}-\d{2}-\d{2})_', filename).group(1).replace('_', '')
         time = re.search('_(\d{2}-\d{2}-\d{2})_', filename).group(1).replace('_', '')
         ses_id = re.search('_(\d{3})_', filename).group(1).replace('_', '')
@@ -290,10 +290,10 @@ def main():
     experiment_name = input('Experiment name (e.g. 3c_sociability or resting_state): ')
     print("Select the folder that holds the EDF files")
     edf_folder = select_folder("Select the folder that holds the EDF files")
-    print("Select or create a folder to hold the output NWB files")
-    nwb_output_folder = select_or_create_folder("Select or create a folder to hold the output NWB files")
     print("Select the excel file that holds information about all experimental animals")
     all_animals_metadata = select_file("Select the excel file that holds information about all experimental animals")
+    print("Select or create a folder to hold the output NWB files")
+    nwb_output_folder = select_or_create_folder("Select or create a folder to hold the output NWB files")
 
     # read the metadata
     all_animals_metadata = pd.read_excel(all_animals_metadata, dtype={'mouseName': str, 'mouseId': str})
