@@ -36,6 +36,9 @@ low_qual_chans = {
 ## FILTERING / NWB CREATION SETTINGS ##
 #######################################
 
+# method of that will be used to filter the raw EEG signal; either 'mne' or 'scipy'
+filter_method = 'mne'
+
 # set to desired sampling frequency or to None if you do not wish to down-sample the EEG data
 resample_freq = 1000
 

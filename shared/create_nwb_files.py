@@ -232,9 +232,10 @@ def add_filtered_eeg(nwb, raw, s_freq, all_table_region):
         s_freq = resample_freq  # set s_freq to the sampling frequency that data has been resampled to
 
     # filter the EEG data (all channels) and put into an array
-    filtered_eeg = np.array(
-        [filter_eeg(raw[chan][0][0], s_freq, lcut, hcut, low_val, high_val, art) for chan in electrode_info.keys()]
-    )
+    filtered_eeg = np.array([
+        filter_eeg(raw[chan][0][0], filter_method, s_freq, lcut, hcut, low_val, high_val, art)
+        for chan in electrode_info.keys()
+    ])
 
     # Create new ElectricalSeries object to hold the filtered EEG, and add to nwb
     filt_elec_series = ElectricalSeries(
