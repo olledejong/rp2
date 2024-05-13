@@ -356,8 +356,6 @@ def main():
 
         # load the epochs of this subject
         subject_id = epochs_filename.split('_')[-1].split('-')[0]
-        if subject_id not in ['79593']: continue
-        # for now, skipping the subjects that are of bad quality or seem to need clustering using 4 clusters
         print(f"Working with subject {subject_id}.")
 
         subject_epochs = mne.read_epochs(
