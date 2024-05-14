@@ -8,7 +8,7 @@ from pynwb import NWBHDF5IO
 
 from settings_general import *
 from shared.helper_functions import *
-from shared.nwb_retrieval_functions import get_eeg
+from shared.nwb_retrieval_functions import get_eeg, get_package_loss
 from settings_general import subject_id_batch_cage_dict
 from shared.eeg_video_alignment_functions import adjust_fps, get_first_ttl_offset
 
@@ -16,13 +16,13 @@ from shared.eeg_video_alignment_functions import adjust_fps, get_first_ttl_offse
 def merge_event_rows(beh_data):
     merged_df = pd.concat([
         beh_data.iloc[::2].reset_index(drop=True),  # only keep each start row
-        beh_data.iloc[::2].reset_index(drop=True)['Image index'].rename('Frame start'),  # interaction start frame
-        beh_data.iloc[1::2].reset_index(drop=True)['Image index'].rename('Frame stop'),  # interaction stop frame
+        beh_data.iloc[::2].reset_index(drop=True)['Image index'].rename('Frame start'),  # event start frame
+        beh_data.iloc[1::2].reset_index(drop=True)['Image index'].rename('Frame stop'),  # event stop frame
         beh_data.iloc[1::2].reset_index(drop=True)['Time'] - beh_data.iloc[::2]['Time'].reset_index(drop=True),
         # duration
     ], axis=1)
-    # rename the last column as it represents the duration of the interaction
-    merged_df = merged_df.set_axis([*merged_df.columns[:-1], 'Interaction duration'], axis=1)
+    # rename the last column as it represents the duration of the event (in seconds)
+    merged_df = merged_df.set_axis([*merged_df.columns[:-1], 'Event duration'], axis=1)
     # drop the columns we don't need
     cols_to_drop = [
         'Image index', 'Time', 'Observation type', 'Source', 'Time offset (s)', 'Subject', 'Comment', 'Image file path',
@@ -79,22 +79,22 @@ def frame_to_sample(video_frame, adjusted_fps, offset, s_freq):
 def get_epoch_overlap(event):
     """
     Calculates the overlap each fixed epoch of 'desired_epoch_length' needs to have with the previous one in order
-    to capture all data that falls within an interaction.
+    to capture all data that falls within an event.
 
     Example:
     To calculate the overlap in seconds we determine how many overlaps there are between the supposed epochs
-    e.g. we have an interaction of duration 2,4 seconds. If we start at 0 and create epochs of 1 second, this
+    e.g. we have an event/interaction of duration 2,4 seconds. If we start at 0 and create epochs of 1 second, this
     would give us 3 epochs, however, the last one isn't of the same length (0.4 seconds)
     we then get the overlap needed to capture all data within epochs of 1 second by dividing the amount of seconds
     missing that would have created a full 3rd epoch (0.6 seconds) by the amount of epoch overlaps (3)
     in this case the overlap is thus 0.2 seconds.
 
-    :param event: the interaction event with start/stop time in frames and interaction duration
+    :param event: the interaction/event with start/stop time in frames and event duration
     :return:
     """
-    total_duration = event['Interaction duration']
+    total_duration = event['Event duration']
 
-    # let's calculate the number of epochs of length 'desired_epoch_length' that fit into the interaction
+    # let's calculate the number of epochs of length 'desired_epoch_length' that fit into the event
     # this is also the number of overlaps between all epochs if you would cut it at increments of
     # 'desired_epoch_length'
     num_full_epochs = int(total_duration // desired_epoch_length)
@@ -126,28 +126,27 @@ def get_eeg_start_end_tps(adjusted_video_fps, event, offset, s_freq):
     start_frame, stop_frame = int(event['Frame start']), int(event['Frame stop'])
 
     # total event duration
-    event_duration = event['Interaction duration']
+    event_duration = event['Event duration']
 
     # when the min_event_duration is None, we very likely get events that are shorter than the desired_epoch_length
     # however, it is also possible that the event_duration is shorter than the desired epoch length if we DO set the
     # min_event_duration
-    # therefore we need to add EEG data on each side of the actual interaction to get to the desired epoch length.
+    # therefore we need to add EEG data on each side of the actual event to get to the desired epoch length.
     if event_duration < desired_epoch_length:
-
         missing_duration = desired_epoch_length - event_duration  # seconds
         missing_duration_frames = missing_duration * adjusted_video_fps  # in frames
 
-        # get the amount of frames we need to add to each side of the interaction in order to make it of length
+        # get the amount of frames we need to add to each side of the event in order to make it of length
         # 'desired_epoch_length'
         to_subtract_and_add = missing_duration_frames / 2
 
         start_frame, stop_frame = np.floor(start_frame - to_subtract_and_add), np.ceil(stop_frame + to_subtract_and_add)
 
     # using the adjusted FPS and the offset of the first TTL, get the start/stop time-points of the event in samples
-    interaction_start = int(frame_to_sample(start_frame, adjusted_video_fps, offset, s_freq))
-    interaction_end = int(frame_to_sample(stop_frame, adjusted_video_fps, offset, s_freq))
+    event_start = int(frame_to_sample(start_frame, adjusted_video_fps, offset, s_freq))
+    event_end = int(frame_to_sample(stop_frame, adjusted_video_fps, offset, s_freq))
 
-    return interaction_start, interaction_end
+    return event_start, event_end
 
 
 def get_epochs(nwb_file_path, beh_data_subset, adjusted_video_fps, offset, s_freq, subject_id, genotype):
@@ -165,14 +164,39 @@ def get_epochs(nwb_file_path, beh_data_subset, adjusted_video_fps, offset, s_fre
     :param subject_id:
     :return:
     """
-    all_interaction_epochs = []
+    all_event_epochs = []
+    skipped_events = 0
 
     # loop through all events
     for index, event in beh_data_subset.iterrows():
 
-        interaction_start, interaction_end = get_eeg_start_end_tps(adjusted_video_fps, event, offset, s_freq)
+        event_start, event_end = get_eeg_start_end_tps(adjusted_video_fps, event, offset, s_freq)
 
-        interaction_eeg, chans = get_eeg(nwb_file_path, 'filtered_EEG', (interaction_start, interaction_end), True)
+        event_eeg, chans = get_eeg(nwb_file_path, 'filtered_EEG', (event_start, event_end), True)
+
+        # do not handle events that have too much package loss
+        if not resampled:
+            event_duration = event_end - event_start  # in EEG samples
+            too_much_package_loss = False
+
+            # get package loss
+            ploss, _ = get_package_loss(nwb_file_path, (event_start, event_end))
+
+            # calc total package loss per channel, and if there's too much package loss in a channel, skip this event
+            for chan in chans:
+                package_loss = np.sum(np.isnan(ploss[chan]))  # for this channel in EEG samples
+
+                too_much_package_loss = True if (package_loss / event_duration) > package_loss_cutoff else False
+
+                # don't need to check them all if we know there's too much in one channel
+                if too_much_package_loss:
+                    break
+
+            if too_much_package_loss:  # then skip this event
+                # print(f'Skipping {event["Behavior"]} event {index} because there is more than '
+                #       f'{package_loss_cutoff * 100:.2f}% package loss in one of the channels')
+                skipped_events += 1
+                continue
 
         overlap = 0.0
         if overlap_epochs:
@@ -187,7 +211,7 @@ def get_epochs(nwb_file_path, beh_data_subset, adjusted_video_fps, offset, s_fre
 
         ch_types = ["emg" if "EMG" in chan else "eeg" for chan in chans]
         info = mne.create_info(ch_names=list(chans), sfreq=s_freq, ch_types=ch_types)
-        raw = mne.io.RawArray(interaction_eeg, info)
+        raw = mne.io.RawArray(event_eeg, info)
 
         # make fixed length epochs of 'desired_epoch_length' length
         epochs = mne.make_fixed_length_epochs(
@@ -198,19 +222,22 @@ def get_epochs(nwb_file_path, beh_data_subset, adjusted_video_fps, offset, s_fre
         metadata = pd.DataFrame({
             'subject_id': [subject_id] * len(epochs),
             'genotype': [genotype] * len(epochs),
-            'interaction_n': [index + 1] * len(epochs),
-            'interaction_part_n': range(1, len(epochs) + 1),
-            'interaction_kind': [event["Behavior"]] * len(epochs),
-            'total_interaction_duration': [event["Interaction duration"]] * len(epochs),
+            'event_n': [index + 1] * len(epochs),
+            'event_part_n': range(1, len(epochs) + 1),
+            'event_kind': [event["Behavior"]] * len(epochs),
+            'total_event_duration': [event["Event duration"]] * len(epochs),
             'epoch_length': [desired_epoch_length] * len(epochs),
         })
         epochs.metadata = metadata
 
-        # save this interaction's epochs
-        all_interaction_epochs.append(epochs)
+        # save this event's epochs
+        all_event_epochs.append(epochs)
 
     # concatenate all epoch arrays
-    all_epochs = mne.concatenate_epochs(all_interaction_epochs)
+    all_epochs = mne.concatenate_epochs(all_event_epochs)
+
+    print(f'\nSkipped {skipped_events} events ({skipped_events / len(beh_data_subset) * 100:.2f}%) due to exceeding '
+          f'package-loss threshold')
 
     return all_epochs
 
@@ -253,7 +280,7 @@ def create_cleaned_event_df(beh_data, batch_cage, subject_id, genotype):
                 continue
 
         beh_dat_event = merge_event_rows(beh_dat_event)
-        # merge the start and stop rows and calculate some stuff (interaction duration etc)
+        # merge the start and stop rows and calculate some stuff (event duration etc)
         beh_dat_event.insert(1, 'subject_id', subject_id)
         beh_dat_event.insert(2, 'genotype', genotype)
         beh_df = pd.concat([beh_df, beh_dat_event], axis=0)
@@ -281,32 +308,37 @@ def main():
         with NWBHDF5IO(nwb_file_path, "r") as io:
             nwb = io.read()
 
+            subject_id = nwb.subject.subject_id
+            if os.path.exists(os.path.join(epochs_folder, f'epochs_{subject_id}-epo.fif')):
+                print(f'Epoch file epochs_{subject_id}-epo.fif already exists in the selected folder. Skipping..')
+                continue
+
             filtered_eeg = nwb.acquisition['filtered_EEG'].data[:].T[0]  # only one channel needed to adjust the fps
             s_freq = nwb.acquisition['filtered_EEG'].rate  # sampling frequency/resampled frequency of the EEG
             eeg_ttl_onsets_secs = list(nwb.acquisition["TTL_1"].timestamps)  # timestamps of the TTL onsets in seconds
-            subject_id = nwb.subject.subject_id  # subject id
             genotype = nwb.subject.genotype
             io.close()
 
         # get the batch_cage combination name to retrieve the correct behaviour data
         batch_cage = subject_id_batch_cage_dict[int(subject_id)]
         print(f'\nGetting {batch_cage}.xlsx file belonging to subject {subject_id}')
+        print(f'Sampling frequency: {s_freq}')
 
         # load the behavioural data and then merge start/stop events
         # tracking data from BORIS software has 2 rows for each state event (start/stop), we want one for each
         beh_data = pd.read_excel(os.path.join(behaviour_data, f'{batch_cage}.xlsx'))
         beh_data = create_cleaned_event_df(beh_data, batch_cage, subject_id, genotype)
 
-        print(f'Total number of interaction: {len(beh_data)}.')
+        print(f'Total number of events: {len(beh_data)}.')
         print(f'Number of events per type: {np.unique(beh_data["Behavior"], return_counts=True)}')
 
         if min_event_duration is not None:
-            longer_than = len(beh_data[beh_data["Interaction duration"] >= min_event_duration])
-            shorter_than = len(beh_data[beh_data["Interaction duration"] < min_event_duration])
+            longer_than = len(beh_data[beh_data["Event duration"] >= min_event_duration])
+            shorter_than = len(beh_data[beh_data["Event duration"] < min_event_duration])
             print(f'Percentage of events shorter than {min_event_duration} seconds: '
                   f'{shorter_than / (shorter_than + longer_than) * 100:.2f}%')
 
-            beh_data = beh_data[beh_data["Interaction duration"] >= min_event_duration]
+            beh_data = beh_data[beh_data["Event duration"] >= min_event_duration]
             beh_data.reset_index(drop=True, inplace=True)
 
         # get the LED states for this subject (i.e. get the LED states of the correct video)
