@@ -49,7 +49,6 @@ def save_figure(path, bbox_inches='tight', dpi=300):
 
     # Actually save the figure
     plt.savefig(save_path, bbox_inches=bbox_inches, dpi=dpi)
-    plt.close()
 
 
 # Tkinter functions used to request file/folder locations from the user
