@@ -66,6 +66,12 @@ filtering = {
 ## FRAME BASED EPOCHING SETTINGS ##
 ###################################
 
+# is your filtered EEG in your NWB also resampled?
+resampled = False
+
+# if your filtered EEG in the NWB files is not resampled, then set the package loss cutoff
+package_loss_cutoff = 0.15  # max percentage of package loss that is allowed (as a fraction)
+
 # minimum duration of the interaction between mouse and cup/mouse (in seconds)
 # set to None if you do not wish to require a minimum event duration
 min_event_duration = None
