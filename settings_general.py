@@ -40,7 +40,7 @@ low_qual_chans = {
 filter_method = 'mne'
 
 # set to desired sampling frequency or to None if you do not wish to down-sample the EEG data
-resample_freq = 1000
+resample_freq = None
 
 # variables used for raw EEG filtering while creating Neurodata Without Border (NWB) files (one of the first steps)
 filtering = {
@@ -60,6 +60,16 @@ filtering = {
         "EEG 7": ["EMG_L", 0, 0, 0, "emg"],
         "EEG 10": ["EMG_R", 0, 0, 0, "emg"]
     }
+}
+
+channel_name_dict = {
+    'OFC_R': 'Right Orbitofrontal Cortex (depth)',
+    'OFC_L': 'Left Orbitofrontal Cortex (depth)',
+    'CG': 'Cingulate Cortex (depth)',
+    'STR_R': 'Right Striatum (depth)',
+    'S1_L': 'Left Somatosensory (skull)',
+    'S1_R': 'Right Somatosensory (skull)',
+    'V1_R': 'Right Visual (skull)',
 }
 
 ###################################
