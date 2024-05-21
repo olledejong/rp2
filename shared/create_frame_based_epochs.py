@@ -183,7 +183,8 @@ def get_epochs(nwb_file_path, beh_data_subset, adjusted_video_fps, offset, s_fre
             ploss, _ = get_package_loss(nwb_file_path, (event_start, event_end))
 
             # calc total package loss per channel, and if there's too much package loss in a channel, skip this event
-            for chan in chans:
+            chans_to_check = [chan for chan in chans if 'EMG' not in chan]
+            for chan in chans_to_check:
                 package_loss = np.sum(np.isnan(ploss[chan]))  # for this channel in EEG samples
 
                 too_much_package_loss = True if (package_loss / event_duration) > package_loss_cutoff else False
@@ -210,12 +211,12 @@ def get_epochs(nwb_file_path, beh_data_subset, adjusted_video_fps, offset, s_fre
                 overlap = 0.0
 
         ch_types = ["emg" if "EMG" in chan else "eeg" for chan in chans]
-        info = mne.create_info(ch_names=list(chans), sfreq=s_freq, ch_types=ch_types)
-        raw = mne.io.RawArray(event_eeg, info)
+        info = mne.create_info(ch_names=list(chans), sfreq=s_freq, ch_types=ch_types, verbose="WARNING")
+        raw = mne.io.RawArray(event_eeg, info, verbose="WARNING")
 
         # make fixed length epochs of 'desired_epoch_length' length
         epochs = mne.make_fixed_length_epochs(
-            raw, duration=desired_epoch_length, overlap=overlap, preload=True
+            raw, duration=desired_epoch_length, overlap=overlap, preload=True, verbose="WARNING"
         )
 
         # create metadata dataframe and add to epochs array
@@ -234,7 +235,7 @@ def get_epochs(nwb_file_path, beh_data_subset, adjusted_video_fps, offset, s_fre
         all_event_epochs.append(epochs)
 
     # concatenate all epoch arrays
-    all_epochs = mne.concatenate_epochs(all_event_epochs)
+    all_epochs = mne.concatenate_epochs(all_event_epochs, verbose="WARNING")
 
     print(f'\nSkipped {skipped_events} events ({skipped_events / len(beh_data_subset) * 100:.2f}%) due to exceeding '
           f'package-loss threshold')
