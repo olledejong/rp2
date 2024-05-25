@@ -46,7 +46,7 @@ resample_freq = None
 filtering = {
     "lcut": 0.5,  # lower limit of desired band / filter (to be normalized)
     "hcut": 200,  # upper limit of desired band / filter (to be normalized)
-    "art": None,  # std of the signal is multiplied by this value to filter out additional artifacts
+    "art": 3,  # std of the signal is multiplied by this value to filter out additional artifacts
     "low_val": 0.006,  # lower value of artifact removal (caused by package loss)
     "high_val": 0.013,  # upper value of artifact removal (caused by package loss)
     "electrode_info": {
