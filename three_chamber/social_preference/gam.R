@@ -26,7 +26,7 @@ chan_names <- list(
 
 #________________________ Data cleaning _______________________________________
 # Load data
-df <- read_excel("C:\\Users\\Olle de Jong\\Desktop\\dat.xlsx")
+df <- read_excel("C:\\Users\\Olle de Jong\\Desktop\\dat_pref.xlsx")
 df <- subset(df, select = -...1)
 df <- subset(df, select = -psd)
 
@@ -101,10 +101,10 @@ make_gams <- function(df, event_type, channel, gam_formula, max_freq, experiment
 #_______________________________________________________________________________
 
 # change to your liking
-experiment_name = '3_chamber_sociability'
-all_events = c("social_cup", "non-social_cup")
+experiment_name <- '3_chamber_preference'
+all_events <- c("familiar_cup", "novel_cup")
 max_freq <- 100
-output_path <- 'C:/Users/Olle de Jong/Documents/MSc Biology/rp2/rp2_data/3C_sociability/output/gams'
+output_path <- 'C:/Users/Olle de Jong/Documents/MSc Biology/rp2/rp2_data/3C_preference/output/gams'
 
 # Define gma formula
 gam_formula <- psd ~ s(freq, by=genotype, k=40) +
