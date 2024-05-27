@@ -2,3 +2,5 @@
 /z_trash/
 /venv/
 /z_cluster_scripts/
+*/*/.RData
+*/*/.Rhistory
