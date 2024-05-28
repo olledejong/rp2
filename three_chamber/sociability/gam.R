@@ -26,7 +26,7 @@ chan_names <- list(
 
 #________________________ Data cleaning _______________________________________
 # Load data
-df <- read_excel("C:\\Users\\Olle de Jong\\Desktop\\dat.xlsx")
+df <- read_excel("C:\\Users\\Olle de Jong\\Desktop\\data_3cs.xlsx")
 df <- subset(df, select = -...1)
 df <- subset(df, select = -psd)
 
@@ -35,6 +35,7 @@ df$batch <- as.factor(df$batch)
 
 df$genotype <- as.factor(df$genotype)
 df$subject_id <- as.factor(df$subject_id)
+df$transmitter <- as.factor(df$transmitter)
 
 # Make log cols
 df <- df %>% rename(psd = `psd (norm)`)
@@ -71,7 +72,8 @@ make_gams <- function(df, event_type, channel, gam_formula, max_freq, experiment
   
   # Make GAM
   g1 <- gam(gam_formula,
-            family = Gamma(link = "log"),
+            family=Gamma(link='log'),
+            method='ML',
             data=sub)
   
   # Make predictions
@@ -104,13 +106,7 @@ make_gams <- function(df, event_type, channel, gam_formula, max_freq, experiment
 experiment_name = '3_chamber_sociability'
 all_events = c("social_cup", "non-social_cup")
 max_freq <- 100
-output_path <- 'C:/Users/Olle de Jong/Documents/MSc Biology/rp2/rp2_data/3C_sociability/output/gams'
-
-# Define gma formula
-gam_formula <- psd ~ s(freq, by=genotype, k=40) +
-  genotype +
-  s(subject_id, bs='fs', m=1) +
-  s(batch, bs="fs", m=1)
+output_path <- 'C:/Users/Olle de Jong/Desktop'
 
 # Loop over behaviors
 for (event_type in all_events) {
@@ -133,8 +129,10 @@ for (event_type in all_events) {
     # for batches can help account for any non-linear variation in 'psd' associated 
     # with different batches of experiments.
     
-    gam_formula <- psd ~ s(freq, by=genotype, k=40) +
+    # Define gma formula
+    gam_formula <- psd ~ s(freq, by=genotype, k=80) +
       genotype +
+      s(transmitter, bs='fs', m=1) +
       s(subject_id, bs='fs', m=1) +
       s(batch, bs="fs", m=1)
     
