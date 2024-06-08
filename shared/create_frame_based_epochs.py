@@ -69,9 +69,9 @@ def frame_to_sample(video_frame, adjusted_fps, offset, s_freq):
     # go from video frame to seconds
     video_tp_secs = video_frame / adjusted_fps
 
-    # first ttl onset always later in video than in EEG, so to go from video tp in seconds to the eeg tp in seconds
-    # we subtract the absolute offset between the two TTLs
-    eeg_tp_secs = video_tp_secs - np.abs(offset)
+    # first TTL onset always later in EEG than video, so to go from video tp in seconds to the eeg tp in seconds
+    # we add the calculated offset
+    eeg_tp_secs = video_tp_secs + offset
 
     return eeg_tp_secs * s_freq  # go to samples
 

@@ -9,15 +9,15 @@ def get_first_ttl_offset(eeg_ttl_onsets, led_ttl_onsets, adjusted_fps, s_freq):
     EEG recording didn't start at exactly the same moment, so we have to align the two data sources. we calculate the
     offset in seconds between the first EEG TTL and video LED TTL onset.
 
-    :param eeg_ttl_onsets:
+    :param eeg_ttl_onsets: already in seconds
     :param led_ttl_onsets:
     :param adjusted_fps:
     :param s_freq:
     :return:
     """
-    first_ttl_onset_secs = eeg_ttl_onsets[0] / s_freq  # scale back to seconds
     first_led_onset_secs = led_ttl_onsets[0] / adjusted_fps  # scale back to seconds using adjusted FPS
-    offset_secs = first_ttl_onset_secs - first_led_onset_secs
+
+    offset_secs = eeg_ttl_onsets[0] - first_led_onset_secs  # get the offset
 
     return offset_secs
 
@@ -34,8 +34,8 @@ def adjust_fps(eeg_signal, eeg_ttl_onsets, led_ttl_onsets, s_freq, verbose=True)
 
     :param verbose:
     :param eeg_signal:
-    :param eeg_ttl_onsets:
-    :param led_ttl_onsets:
+    :param eeg_ttl_onsets: in seconds
+    :param led_ttl_onsets: in frames
     :param s_freq:
     :return:
     """

@@ -26,8 +26,10 @@ chan_names <- list(
 
 #________________________ Data cleaning _______________________________________
 # Load data
-df <- read_excel("C:\\Users\\Olle de Jong\\Desktop\\data_mim_mic_3cs.xlsx")
+df <- read_excel("C:\\Users\\Olle de Jong\\Desktop\\data_mim_mic_3cs_DMN.xlsx")
 df <- subset(df, select = -...1)
+
+df <- subset(df, batch %in% c('batch4', 'batch5', 'batch5b', 'batch6'))
 
 df$batch <- as.numeric(gsub("\\D", "", df$batch))
 df$batch <- as.factor(df$batch)
@@ -35,6 +37,8 @@ df$batch <- as.factor(df$batch)
 df$genotype <- as.factor(df$genotype)
 df$animal_id <- as.factor(df$animal_id)
 df$transmitter <- as.factor(df$transmitter)
+
+
 
 #_______________ Plotting of relevant figures __________________________
 
@@ -100,7 +104,7 @@ make_gams <- function(df, interaction_type, gam_formula, max_freq, experiment_na
 experiment_name = '3_chamber_sociability'
 interaction_types = c("social_cup", "non-social_cup")
 max_freq <- 100
-output_path <- "C:/Users/Olle de Jong/Documents/MSc Biology/rp2/rp2_data/3C_sociability/output/gams/MIM"
+output_path <- "C:/Users/Olle de Jong/Documents/MSc Biology/rp2/rp2_data/3C_sociability/output/gams/MIM_DMN/batches4-6"
 
 # Define gma formula
 gam_formula <- mim ~ s(freqs, by=genotype, k=80) +
